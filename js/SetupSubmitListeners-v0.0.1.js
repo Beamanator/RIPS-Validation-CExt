@@ -47,14 +47,17 @@ function setupRipsSubmitListeners(url) {
 				formActions: ['/Stars/MatterAction/CreateServices'],
 				doValidation: false
 			}
-		},
-		AdvancedSearch: {
-			urlPiece: "SearchClientDetails/AdvancedSearch",
-			submitConfig: {
-				formActions: ['/Stars/SearchClientDetails/AdvancedSearch'],
-				doValidation: true
-			}
 		}
+		// Added as a comment - someone suggested adding this, but may not actually be
+		// useful (can search partial #s for Phone #, and get results)
+		// also - this was being weird when trying to implement so i stopped :D
+		// AdvancedSearch: {
+		// 	urlPiece: "SearchClientDetails/AdvancedSearch",
+		// 	submitConfig: {
+		// 		formActions: ['/Stars/SearchClientDetails/AdvancedSearch'],
+		// 		doValidation: true
+		// 	}
+		// }
 	};
 
 	// now check which page we're on, and set up those submit listeners:
@@ -70,8 +73,8 @@ function setupRipsSubmitListeners(url) {
 	else if ( urlHas(url, ripsPages.AddService.urlPiece) )
 			handleSubmit(ripsPages.AddService.submitConfig);
 
-	else if ( urlHas(url, ripsPages.AdvancedSearch.urlPiece) )
-			handleSubmit(ripsPages.AdvancedSearch.submitConfig);
+	// else if ( urlHas(url, ripsPages.AdvancedSearch.urlPiece) )
+	// 		handleSubmit(ripsPages.AdvancedSearch.submitConfig);
 
 	else
 		console.info('No submit listeners to set up on page');
@@ -83,35 +86,50 @@ function setupRipsSubmitListeners(url) {
 
 /**
  * Handles form submit events via params and online state
- * Ex: if offline, form submit is prevented
+ * Ex: if offline or data invalid, form submit is prevented
  * 
- * @param {object} submitConfig configuration obj detailing submission details
+ * Note: to enable form submit repression after async functions, we automatically
+ * repress submission, then (if checks pass) store data in $('form').data, retrigger
+ * submission, then return true before repressing next submit
+ * 
+ * @param {object} config configuration obj detailing submission details
+ * @returns true if submitNow flag set to 'true', otherwise prevents form submission
  */
-function handleSubmit(submitConfig) {
-	var formActions = submitConfig.formActions;
-	var validateFlag = submitConfig.doValidation;
+function handleSubmit(config) {
+	var formActions = config.formActions;
+	var validateFlag = config.doValidation;
 
 	for (var i = 0; i < formActions.length; i++) {
 		$('form[action="' + formActions[i] + '"]').submit(function(event) {
+			var thisForm = $(this);
+
+			// check for submitNow flag (set if all checks pass)
+			if ( thisForm.data().submitNow === 'true' )
+				return true;
+
+			// Start submission with preventing default, then trigger submission later if all checks pass
+			event.preventDefault();
+
 			// first check valid, then check online / offline
 			// note: validation check throws error if invalid
 			doValidationCheck(validateFlag)
 
-			// validFieldsStatusFlag reflects validity of fields on the page
-			.then(function(validFieldsStatusFlag) {
-				console.log('fields valid? ', validFieldsStatusFlag);
+			// fieldsValidFlag reflects validity of fields on the page
+			.then( function(fieldsValidFlag) {
 
 				// throw offline error if fields are valid
 				// if fields aren't valid, error already thrown by doValidationCheck()
-				var offlineErrorFlag = validFieldsStatusFlag;
-				var offlineFlag = doOfflineCheck( offlineErrorFlag );
+				var throwOfflineError = fieldsValidFlag;
+				var offlineFlag = doOfflineCheck( throwOfflineError );
 
-				// prevent form submission if fields invalid OR if offline
-				if  (
-						!validFieldsStatusFlag || // at least 1 field is invalid
-						offlineFlag				  // internet offline = true
-					)
-					event.preventDefault();
+				// If everything is okay, trigger submission manually here & store submitNow flag.
+				if (
+					fieldsValidFlag &&	// true if all fields are valid
+					!offlineFlag		// true if offline
+				) {
+					thisForm.data({ 'submitNow': 'true' });
+					thisForm.trigger('submit');
+				}
 			});
 		});
 	}
@@ -164,6 +182,12 @@ function doOfflineCheck(throwErrorFlag = true) {
 	}
 }
 
+/**
+ * Function validaties fields are populated correctly upon submit
+ * 
+ * @param {boolean} validateFlag if false, skip validation
+ * @returns Promise with validation results
+ */
 function doValidationCheck(validateFlag) {
 	return new Promise( function(resolve, reject) {
 		// If no validation needed, resolve immediately
@@ -172,32 +196,49 @@ function doValidationCheck(validateFlag) {
 			return;
 		}
 
-		getMultipleValuesFromStorage( ["VALID_UNHCR", "VALID_PHONE"] )
-		.then(function(successes) {
-			// successes should come back in the same order, so:
-			var valUNHCR = successes[0];
-			var valPhone = successes[1];
-			// var valDates = successes[2];
-			// var valAppt = successes[3];
+		// setup action for background.js
+		var mObj = {
+			action: "get_data_from_chrome_storage_local",
+			key: 'key',
+			'key0': 'VALID_UNHCR',
+			'key1': 'VALID_PHONE'
+		};
 
-			var validFieldsFlag = true;
+		// send data to background.js
+		chrome.runtime.sendMessage(mObj, function(response) {
+			var responseKey = mObj.key;
+
+			// successes should come back in the same order, so:
+			var valUNHCR = response[responseKey + '0'];
+			var valPhone = response[responseKey + '1'];
+			// var valDates = response[2];
+			// var valAppt = response[3];
+
+			var fieldsValidFlag = true;
 
 			// if vals are true, validate those fields.
 			// if vals are undefined, default is to do the same!
-			if ( validFieldsFlag && 
+			if ( fieldsValidFlag && 
 					(valUNHCR === true || valUNHCR === undefined ))
-				validFieldsFlag = validateUNHCR();
+				fieldsValidFlag = validateUNHCR();
 
-			if ( validFieldsFlag &&
+			if ( fieldsValidFlag &&
 					(valPhone === true || valPhone === undefined ))
-				validFieldsFlag = validatePhoneNo();
+				fieldsValidFlag = validatePhoneNo();
 			
-			resolve(validFieldsFlag);
+			resolve(fieldsValidFlag);
 		});
 	});
 }
 
 // function returns true if passed-in url has "text" in it
+/**
+ * Function takes a url and some text, returns if the text appears in the url
+ * 
+ * @param {any} url 
+ * @param {any} text - is this in the url? check returned value!
+ * @returns true or false, depending on if 'text' is found inside 'url'
+ */
 function urlHas(url, text) {
 	if (url.indexOf(text) === -1)
 		return false;

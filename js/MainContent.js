@@ -5,6 +5,7 @@ $(document).ready(function(){
 
 // Loads validation settings from local storage
 function loadValidation() {
+
 	getMultipleValuesFromStorage( ["VALID_UNHCR", "VALID_PHONE", "VALID_DATES", "VALID_APPT"] )
 	.then(function(successes) {
 		// successes should come back in the same order, so:
@@ -119,7 +120,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 });
 
 // "clicked_browser_action" is our point for kicking things off
-chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener( function(request, MessageSender, sendResponse) {
 	// Kick things off in content.js!
 	if( request.message === "clicked_browser_action" ) {
 		// console.log(request.value, request.on);
@@ -137,6 +138,11 @@ chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
         		changeValidateAppointmentNo(request.on);
         		break;
 		}
+	} else {
+		console.log('listened to message, but not handled -> ',
+			request,
+			request.message
+		);
 	}
 });
 
@@ -144,15 +150,14 @@ chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
 //                            VALIDATION FUNCTIONS
 // ========================================================================
 
-/*
-	Validates if a given UNHCR ID is valid in the new or old format
-		valid 'New' format: ###-YYC#####
-		valid 'Old' format: ####/YYYY
-		valid 'Pre-card' format: ###-CS########
-		valid 'Unknown' / 'None' format: 'None'
-*/
+/**
+ *	Validates if a given UNHCR ID is valid in the new or old format
+ *		valid 'New' format: ###-YYC#####
+ *		valid 'Old' format: ####/YYYY
+ *		valid 'Pre-card' format: ###-CS########
+ *		valid 'Unknown' / 'None' format: 'None'
+ */
 function validateUNHCR() {
-    // console.log('validating UNHCR ID');
 
     // can use '\\n' to enter text on a new line if needed
     function throwUnhcrError(message, fatal) {
@@ -172,7 +177,7 @@ function validateUNHCR() {
     	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
     	// -> log error message to console
     	if (!ThrowError) {
-    		console.log(msg);
+    		console.error(msg);
     		return;
     	}
 
@@ -296,7 +301,7 @@ function validateUNHCR() {
     			checkValidNone(UNHCRID)
     		) {
     	// one format is correct, so we're happy!
-    	console.log('UNHCR ID is valid');
+    	// console.log('UNHCR ID is valid');
     	return true;
     } else {
     	// No valid formats, so pop up warning!

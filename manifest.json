@@ -12,7 +12,7 @@
 	],
 	"browser_action": {
 		"default_icon": "icon.png",
-		"default_popup": "popup.html"
+		"default_popup": "html/popup.html"
 	},
 	"icons": {
 		"48": "icon48.png",
@@ -38,10 +38,10 @@
 				// "js/FirebaseContentScriptAPI.js",
 			]
 		}
-	]
-	// "background": { // -> create app.js too!
-	// 	"page": "background.html"
-	// },
+	],
+	"background": {
+		"page": "html/background.html"
+	}
 	// "content_security_policy":"script-src 'self' 'unsafe-eval' https://www.gstatic.com/ https://*.firebaseio.com https://www.googleapis.com; object-src 'self'"
 	/*
 		TODO: add these properties:

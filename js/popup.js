@@ -3,35 +3,42 @@ $(document).ready(function() {
 })
 // ================================ FIELD VALIDATION ==================================
 
-function getValueFromStorage(key) {
-	return new Promise( function(resolve, reject) {
-		chrome.storage.local.get(key, function(item) {
-			// successful
-			resolve(item[key]);
-		});
-	});
-}
+/**
+ * Function aligns validation checkboxes with data from chrome local storage
+ * Function gets data from local storage via background.js
+ * 
+ * @param {array} keys 
+ */
+function initializeValidationCheckboxes() {
 
-// Function returns a promise (promise.all) with the returned values from given keys
-function getMultipleValuesFromStorage(keys) {
-	var promises = [];
+	var dataKeys = [
+		"VALID_UNHCR",
+		"VALID_PHONE",
+		"VALID_DATES",
+		"VALID_APPT"
+	];
 
-	for (var i in keys) {
-		promises.push( getValueFromStorage(keys[i]) );
+	// setup action for background.js
+	var mObj = {
+		action: "get_data_from_chrome_storage_local",
+		key: 'key'
+	};
+
+	// add all dataKeys to mObj (in serializable format)
+	for (let i = 0; i < dataKeys.length; i++) {
+		var objKey = 'key' + i;
+		mObj[objKey] = dataKeys[i];
 	}
 
-	return Promise.all(promises);
-}
+	// send data to background.js
+	chrome.runtime.sendMessage(mObj, function(response) {
+		var responseKey = mObj.key;
 
-// holds all initialization stuff
-function initScript() {
-	getMultipleValuesFromStorage( ["VALID_UNHCR", "VALID_PHONE", "VALID_DATES", "VALID_APPT"] )
-	.then(function(successes) {
 		// successes should come back in the same order, so:
-		var valUNHCR = successes[0];
-		var valPhone = successes[1];
-		// var valDates = successes[2];
-		// var valAppt = successes[2];
+		var valUNHCR = response[responseKey + '0'];
+		var valPhone = response[responseKey + '1'];
+		// var valDates = response[2];
+		// var valAppt = response[3];
 
 		if ( typeof(valUNHCR) === 'boolean')
 			$('input[value="validate_unhcr"]').prop('checked', valUNHCR);
@@ -42,6 +49,11 @@ function initScript() {
 		// if (valDates === true) { $('input[value="validate_dates"]').click(); }
 		// if (valAppt === true)  { $('input[value="validate_appt_no"]').click(); }
 	});
+}
+
+// holds all initialization stuff
+function initScript() {
+	initializeValidationCheckboxes();
 
 	// adding click event binding to validation checkboxes
 	$('input[type="checkbox"]').click(function() {
