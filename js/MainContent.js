@@ -384,7 +384,8 @@ function validatePhoneNo() {
 		return true;
 	} else {
 		// throw fatal error
-		throwPhoneNoError('Preferred Phone # must be 11 numbers', 1);
+		throwPhoneNoError('Preferred Phone # must be 11 numbers\\n\\n' +
+			'Extra #s should go in "Other phone" field', 1);
 
         return false;
 	}
