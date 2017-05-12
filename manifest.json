@@ -34,7 +34,7 @@
 				"js/SetupSubmitListeners-v0.0.1.js",
 
 				"js/MainContent.js"
-				// add lots of stuff here :D -
+				// potential to add lots of stuff here
 				// "js/FirebaseContentScriptAPI.js",
 			]
 		}
