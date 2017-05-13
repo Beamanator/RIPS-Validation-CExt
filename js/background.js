@@ -93,16 +93,19 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
  * @param {function} responseCallback callback function where gathered data will be sent
  */
 function getValuesFromChromeLocalStorage(mObj, responseCallback) {
-    var keys = Serialize_ObjToArray(mObj);
+    // get object of keys from message object
+    var keysObj = mObj.keysObj;
 
-    // get multiple keys from storage
-    getValuesFromStorage(keys)
-    .then( function(responses) {
+    getValuesFromStorage( keysObj )
+
+    // responses is an array of objects {key:value}
+    .then( function( responses ) {
         // turn responses into a serializable object
         var obj = Serialize_ArrayToObj(responses);
 
         responseCallback( obj );
     });
+
 }
 
 /**
@@ -165,21 +168,41 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
  * Purpose = must send chrome messages as objects, not arrays
  * Note: if arr[i] is undefined, doesn't add to obj!
  * 
- * @param {array} arr array to convert to serializable object
+ * @param {array} arr array of objects to convert to single serializable object
  * @param {object} [obj={}] object to add keys to
- * @param {string} [key='key'] optional key format
  * @param {number} [index=0] starting index
  * @returns serializable object made from array
  */
-function Serialize_ArrayToObj(arr, obj = {}, key = 'key', index = 0) {
-    if (arr.length < 1)
+function Serialize_ArrayToObj(arr, obj = {}, index = 0) {
+    if (arr.length < 1) {
         console.error('Array not populated');
+        return {};
+    }
 
     for (let i = index; i < arr.length; i++) {
-        var nextKey = key + i;
-        // skip undefined values in arr:
-        if ( arr[i] != undefined )
-            obj[nextKey] = arr[i];
+        // var nextKey = key + i;
+        // // skip undefined values in arr:
+        // if ( arr[i] != undefined )
+        //     obj[nextKey] = arr[i];
+
+        // get data object from array
+        var dataObj = arr[i];
+
+        // check if dataObj is an empty object
+        if ( Object.keys( dataObj ).length < 1 )
+            continue;
+
+        else {
+            Object.keys( dataObj ).forEach( function(nextKey, index) {
+                // get next value to serialize from dataObj
+                var nextVal = dataObj[nextKey];
+
+                // if nextVal is legit, push into obj
+                if (nextVal !== undefined && nextVal !== null)
+                    obj[nextKey] = nextVal;
+            });
+        }
+            
     }
 
     return obj;
@@ -242,10 +265,11 @@ function saveValueToStorage(key, value) {
  * @returns Promise with data from 1 key
  */
 function getValFromStorage(key) {
-	return new Promise( function(resolve, reject) {
-		chrome.storage.local.get(key, function(item) {
-			// successful
-			resolve(item[key]);
+	return new Promise( function( resolve, reject ) {
+		chrome.storage.local.get( key, function( dataObj ) {
+
+			// successful -> return data from database
+			resolve( dataObj );
 		});
 	});
 }
@@ -253,15 +277,15 @@ function getValFromStorage(key) {
 /**
  * Function gets multiple keys of data from chrome local storage
  * 
- * @param {array} keys self-explanatory
- * @returns Promise with data from all keys
+ * @param {object} keysObj object full of keys
+ * @returns Promise array with data from all keys
  */
-function getValuesFromStorage(keys) {
+function getValuesFromStorage(keysObj) {
     var promises = [];
 
-	for (var i in keys) {
-		promises.push( getValFromStorage( keys[i] ) );
-	}
+    Object.keys( keysObj ).forEach( function( key, index ) {
+        promises.push( getValFromStorage( key ) );
+    });
 
 	return Promise.all(promises);
 }

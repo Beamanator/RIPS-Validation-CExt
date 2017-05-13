@@ -196,12 +196,13 @@ function doValidationCheck(validateFlag) {
 			return;
 		}
 
-		// setup action for background.js
+		// setup config obj for background.js
 		var mObj = {
 			action: "get_data_from_chrome_storage_local",
-			key: 'key',
-			'key0': 'VALID_UNHCR',
-			'key1': 'VALID_PHONE'
+			keysObj: {
+				'VALID_UNHCR': '',
+				'VALID_PHONE': ''
+			}
 		};
 
 		// send data to background.js

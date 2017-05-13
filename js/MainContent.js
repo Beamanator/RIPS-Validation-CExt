@@ -1,19 +1,29 @@
 $(document).ready(function(){
 	loadValidation();
 	loadSubmitListeners();
+	// TODO: add view manipulator function which will remove / move DOM elements
 	// loadViewManipulator();
 });
 
 // Loads validation settings from local storage
 function loadValidation() {
+	// setup config obj for background.js
+	var mObj = {
+		action: "get_data_from_chrome_storage_local",
+		keysObj: {
+			'VALID_UNHCR': '',
+			'VALID_PHONE': '',
+			'VALID_DATES': '',
+			'VALID_APPT': ''
+		}
+	};
 
-	getMultipleValuesFromStorage( ["VALID_UNHCR", "VALID_PHONE", "VALID_DATES", "VALID_APPT"] )
-	.then(function(successes) {
+	chrome.runtime.sendMessage(mObj, function(response) {
 		// successes should come back in the same order, so:
-		var valUNHCR = successes[0];
-		var valPhone = successes[1];
-		// var valDates = successes[2];
-		// var valAppt = successes[3];
+		var valUNHCR = response['VALID_UNHCR'];
+		var valPhone = response['VALID_PHONE'];
+		// var valDates = response['VALID_DATES'];
+		// var valAppt = response['VALID_APPT'];
 
 		// if vals are true, set validation to true.
 		// if vals are undefined, default is to set validation to true too!
@@ -51,20 +61,17 @@ function getPhoneElemID() { return 'CDAdrMobileLabel'; }
  * @param {boolean} on specifies if we are turning validation on or off
  */
 function setValidatePhoneNo(on) {
-	console.log('setting validate phone number stuff');
 	// Add jQuery 'blur' function to phone text box.
 	// When phone number is changed and focus leaves, calls validation function
     
     if (on) {
     	updateStorageLocal({'VALID_PHONE': true}, function(response) {
-			console.log('woot, inside response callback! - binding', response);
 			$("#" + getPhoneElemID() ).blur(function () {
 		        validatePhoneNo();
 		    });
 		});
 	} else {
 		updateStorageLocal({'VALID_PHONE': false}, function(response) {
-			console.log('woot, inside response callback! - unbinding', response);
 			$("#" + getPhoneElemID() ).unbind("blur");
 		});
 	}
@@ -457,30 +464,6 @@ function updateStorageLocal(dataObj, callback) {
 	
 	// send message config to background.js
 	chrome.runtime.sendMessage(mObj, callback);
-}
-
-// Function returns a promise w/ the value from chrome data storage key:value pair
-// TODO: maybe do some type of validation on input / output.
-// TODO: change out from 'value' to {key: 'value'} - REQUIRES LOTS OF REFACTORING
-function getValueFromStorage(key) {
-	return new Promise( function(resolve, reject) {
-		chrome.storage.local.get(key, function(item) {
-			// successful
-			resolve(item[key]);
-		});
-	});
-}
-
-// Function returns a promise (promise.all) with the returned values from given keys
-// TODO: move to background.js
-function getMultipleValuesFromStorage(keys) {
-	var promises = [];
-
-	for (var i in keys) {
-		promises.push( getValueFromStorage(keys[i]) );
-	}
-
-	return Promise.all(promises);
 }
 
 // ======================= DATE VALIDATION ========================
