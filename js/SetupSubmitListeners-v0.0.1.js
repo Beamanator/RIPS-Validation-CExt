@@ -30,6 +30,11 @@ function setupRipsSubmitListeners(url) {
 					'/Stars/ClientDetails/updateClntVulnerabilities',
 					'/Stars/ClientDetails/SaveDependentStats'
 				],
+				// if clicked button has this 'value' prop, skip submission handling
+				// Note: indices must match formActions
+				elemValueSkip: [
+					'Delete'
+				],
 				doValidation: true
 			}
 			// elemSelector: 'form[action="/Stars/ClientDetails/UpdateClientDetails"] input[type="submit"][value="Save"]'
@@ -99,12 +104,32 @@ function handleSubmit(config) {
 	var formActions = config.formActions;
 	var validateFlag = config.doValidation;
 
-	for (var i = 0; i < formActions.length; i++) {
+	var elemValuesToSkip = config.elemValueSkip;
+	if (elemValuesToSkip == undefined) elemValuesToSkip = [];
+
+	for (let i = 0; i < formActions.length; i++) {
 		$('form[action="' + formActions[i] + '"]').submit(function(event) {
-			var thisForm = $(this);
+			var $thisForm = $(this);
+
+			// get value of clicked element b/c it's possible 2 or more buttons / elements
+			// can submit the same form!
+			var clickedElemValue = $(document.activeElement).val();
+			var valToSkip = elemValuesToSkip[i];
+
+			if (
+				/* there's a valid element value name to skip */
+				valToSkip !== undefined &&
+				valToSkip !== ''
+			) {
+				// example: Delete button [skip form submission validation & stuff]
+				if (clickedElemValue.toUpperCase() === valToSkip.toUpperCase())
+					return true;
+			}
+
+			
 
 			// check for submitNow flag (set if all checks pass)
-			if ( thisForm.data().submitNow === 'true' )
+			if ( $thisForm.data().submitNow === 'true' )
 				return true;
 
 			// Start submission with preventing default, then trigger submission later if all checks pass
@@ -127,8 +152,8 @@ function handleSubmit(config) {
 					fieldsValidFlag &&	// true if all fields are valid
 					!offlineFlag		// true if offline
 				) {
-					thisForm.data({ 'submitNow': 'true' });
-					thisForm.trigger('submit');
+					$thisForm.data({ 'submitNow': 'true' });
+					$thisForm.trigger('submit');
 				}
 			});
 		});
