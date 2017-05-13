@@ -126,37 +126,57 @@ function handleSubmit(config) {
 					return true;
 			}
 
-			
-
 			// check for submitNow flag (set if all checks pass)
 			if ( $thisForm.data().submitNow === 'true' )
 				return true;
 
-			// Start submission with preventing default, then trigger submission later if all checks pass
-			event.preventDefault();
+			// check valid
+			if (validateFlag) {
+				// first prevent default
+				event.preventDefault();
 
-			// first check valid, then check online / offline
-			// note: validation check throws error if invalid
-			doValidationCheck(validateFlag)
-
-			// fieldsValidFlag reflects validity of fields on the page
-			.then( function(fieldsValidFlag) {
-
-				// throw offline error if fields are valid
-				// if fields aren't valid, error already thrown by doValidationCheck()
-				var throwOfflineError = fieldsValidFlag;
-				var offlineFlag = doOfflineCheck( throwOfflineError );
-
-				// If everything is okay, trigger submission manually here & store submitNow flag.
-				if (
-					fieldsValidFlag &&	// true if all fields are valid
-					!offlineFlag		// true if offline
-				) {
-					$thisForm.data({ 'submitNow': 'true' });
-					$thisForm.trigger('submit');
-				}
-			});
+				// then do validation - true, so have to check validation
+				doValidationCheck(validateFlag)
+				.then( function(fieldsValidFlag) {
+					evaluateSubmit(fieldsValidFlag, false, $thisForm);
+				});
+			} else {
+				evaluateSubmit(true, event);
+			}
 		});
+	}
+}
+
+/**
+ * Function handles final extra submission details & flags for form submission
+ * 
+ * Note: really annoying logic below was needed b/c Add Action didn't like saving attendance
+ * notes when the 'submit' was called twice (prevented, then called again)
+ * 
+ * @param {any} fieldsValidFlag true if fields are valid or if validation isn't needed
+ * @param {any} event submission event, or false if coming from validation code (default already prevented)
+ */
+function evaluateSubmit( fieldsValidFlag, event, $thisForm ) {
+	// throw offline error if fields are valid
+	// if fields aren't valid, error already thrown by doValidationCheck()
+	var throwOfflineError = fieldsValidFlag;
+	var offlineFlag = doOfflineCheck( throwOfflineError );
+
+	// this situation is for 1) not validating fields and 2) offline
+	if (offlineFlag && event)
+		event.preventDefault();
+
+	// If everything is okay, check if we came from validating fields or no.
+	if (
+		fieldsValidFlag &&	// true if all fields are valid
+		!offlineFlag		// true if offline
+	) {
+		if (!event) {
+			$thisForm.data({ 'submitNow': 'true' });
+			$thisForm.trigger('submit');
+		} else {
+			// hopefully don't need to do anything since it should just submit?
+		}
 	}
 }
 
