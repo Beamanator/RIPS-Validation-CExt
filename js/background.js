@@ -12,29 +12,40 @@ var config = {
 // firebase.initializeApp(config);
 
 // ================================================================================================
-//                                       main event listener
+//                                  MAIN EVENT LISTENERS
 // ================================================================================================
-// mObj             config object for listener to handle
-// MessageSender    chrome object that holds information about message sender
-// sendResponse     callback function for message sender
+
+/* mObj             object containing config and data
+ *                  {
+ *               		action: "get_data_...",
+ *               		key: 'keyName',           // -> Default = 'key',
+ *               		'keyName'0: val0,
+ *               		'keyName'1: val1,
+ *               		...	
+ *               	}
+ * MessageSender    chrome object that holds information about message sender (ex: tab id)
+ * sendResponse     callback function for message sender
+ */
 chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse) {
     var action = mObj.action;
     var async = false;
 
+    // set default key:
+    if (!mObj.key) mObj.key = 'key';
+
     switch(action) {
 
-        /* get data from storage and send back. mObj details:
-        *  	{
-        *		action: "get_data_...",
-        *		key: 'keyName', // -> Default = 'key',
-        *		'keyName'0: val0,
-        *		'keyName'1: val1,
-        *		...	
-        *	}
-        */
+        // gets data from chrome's local storage and returns to caller via sendResponse
         case 'get_data_from_chrome_storage_local':
             getValuesFromChromeLocalStorage(mObj, sendResponse);
-            // async because using promises
+            // async because uses promises
+            async = true;
+            break;
+
+        // save data to chrome's local storage
+        case 'store_data_to_chrome_storage_local':
+            storeToChromeLocalStorage(mObj, sendResponse);
+            // async because uses promises
             async = true;
             break;
 
@@ -56,6 +67,21 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
     if (async) return true;
 });
 
+// Listener tracks any changes to local storage in background's console 
+// Got code here: https://developer.chrome.com/extensions/storage
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+	for (key in changes) {
+		var storageChange = changes[key];
+		console.log('Storage key "%s" in namespace "%s" changed. ' +
+			'Old value was "%s", new value is "%s".',
+			key,
+			namespace,
+			storageChange.oldValue,
+			storageChange.newValue
+		);
+	}
+});
+
 // ==============================================================
 //                      main functions
 // ==============================================================
@@ -64,12 +90,9 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
  * Function gets chrome local data and sends data back to caller
  * 
  * @param {object} mObj message object with key data
- * @param {function} sendResponse callback function where gathered data will be sent
+ * @param {function} responseCallback callback function where gathered data will be sent
  */
-function getValuesFromChromeLocalStorage(mObj, sendResponse) {
-    // default for mObj.key:
-    if (!mObj.key) mObj.key = 'key';
-    
+function getValuesFromChromeLocalStorage(mObj, responseCallback) {
     var keys = Serialize_ObjToArray(mObj);
 
     // get multiple keys from storage
@@ -78,7 +101,58 @@ function getValuesFromChromeLocalStorage(mObj, sendResponse) {
         // turn responses into a serializable object
         var obj = Serialize_ArrayToObj(responses);
 
-        sendResponse( obj );
+        responseCallback( obj );
+    });
+}
+
+/**
+ * Function stores data to chrome local storage based off config object (mObj)
+ * 
+ * @param {any} mObj message object holding data to store
+ * @param {any} responseCallback callback function where success message is sent
+ */
+function storeToChromeLocalStorage(mObj, responseCallback) {
+    var dataObj = mObj.dataObj;
+    
+    var storePromises = []; // used to store all key promises below
+
+    // loop through keys in dataObj (turns obj into array of keys)
+    // if dataObj is empty, loop will get skipped
+    Object.keys(dataObj).forEach( function(key, index) {
+        // key: the name of the object key
+        // index: the ordinal position of the key within the object
+        var dataValue = dataObj[key]; 
+
+		/* ============== AVAILABLE KEYS =============
+				VALID_UNHCR   -	holds the on/off (true / false) value for each field
+				VALID_PHONE
+				VALID_DATES   - N/A
+				VALID_APPT    - N/A
+		*/
+		switch (key) {
+            // Recent update: all validation keys can just automatically store data, no need
+            // for special handling (maybe in the future it will be needed)
+			case 'VALID_UNHCR':
+				// var validateUNHCR = dataValue;
+				// storePromises.push(
+				// 	saveValueToStorage('VALID_UNHCR', validateUNHCR)
+				// );
+                storePromises.push( saveValueToStorage(key, dataValue) );
+				break;
+
+			case 'VALID_PHONE':
+				storePromises.push( saveValueToStorage(key, dataValue) );
+				break;
+
+            default:
+                // log errored key to background console:
+                console.log('unable to handle key when saving: ', key);
+		}
+    });
+
+	Promise.all(storePromises)
+    .then( function(responseMessageArr) {
+        responseCallback( responseMessageArr );
     });
 }
 
@@ -143,9 +217,28 @@ function Serialize_ObjToArray(mObj) {
 }
 
 /**
+ * Function stores single key of data into chrome local storage
+ * 
+ * @param {any} key self-explanatory
+ * @param {any} value self-explanatory
+ * @returns Promise that resolves with success message
+ */
+function saveValueToStorage(key, value) {
+    return new Promise( function(resolve, reject) {
+		var obj = {};
+		obj[key] = value;
+
+		chrome.storage.local.set(obj, function() {
+			// successful
+			resolve('Saved: ' + key + ':' + value);
+		});
+	});
+}
+
+/**
  * Function gets single key of data from chrome local storage
  * 
- * @param {string} key 
+ * @param {string} key self-explanatory
  * @returns Promise with data from 1 key
  */
 function getValFromStorage(key) {
@@ -160,7 +253,7 @@ function getValFromStorage(key) {
 /**
  * Function gets multiple keys of data from chrome local storage
  * 
- * @param {array} keys 
+ * @param {array} keys self-explanatory
  * @returns Promise with data from all keys
  */
 function getValuesFromStorage(keys) {

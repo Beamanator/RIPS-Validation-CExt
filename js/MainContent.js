@@ -1,6 +1,7 @@
 $(document).ready(function(){
 	loadValidation();
 	loadSubmitListeners();
+	// loadViewManipulator();
 });
 
 // Loads validation settings from local storage
@@ -42,54 +43,52 @@ function getPhoneElemID() { return 'CDAdrMobileLabel'; }
 //                       CHANGE -> VALIDATION FUNCTIONS
 // ========================================================================
 
-/*
-	Function adds / removes phone number format validation to these textboxes:
-	Registration page:
- 		() Preferred Phone
-	Client Basic Information page:
-		() Preferred Phone
-	@param: on(boolean) -> turning validation on or off
-*/
+/**
+ * Function adds / removes phone number validation to the following pages:
+ * Registration
+ * Client Basic Information
+ * 
+ * @param {boolean} on specifies if we are turning validation on or off
+ */
 function setValidatePhoneNo(on) {
+	console.log('setting validate phone number stuff');
 	// Add jQuery 'blur' function to phone text box.
 	// When phone number is changed and focus leaves, calls validation function
     
     if (on) {
-    	updateStorageLocal([{'VALID_PHONE': true}])
-		.then(function(results) {
+    	updateStorageLocal({'VALID_PHONE': true}, function(response) {
+			console.log('woot, inside response callback! - binding', response);
 			$("#" + getPhoneElemID() ).blur(function () {
 		        validatePhoneNo();
 		    });
 		});
 	} else {
-		updateStorageLocal([{'VALID_PHONE': false}])
-		.then(function(results) {
+		updateStorageLocal({'VALID_PHONE': false}, function(response) {
+			console.log('woot, inside response callback! - unbinding', response);
 			$("#" + getPhoneElemID() ).unbind("blur");
 		});
 	}
 }
 
-/*
-	Function adds / removes UNHCR number format validation to these textboxes:
-	Registration page:
- 		() UNHCR Case Number
- 	-> most other locations have id = "HoRefNo"
-	@param: on(boolean) -> turning validation on or off
-*/
+/**
+ * Function adds / removes UNHCR number validation to the following pages:
+ * Registration
+ * Client Basic Inforamtion
+ * 
+ * @param {boolean} on specifies if we are turning validation on or off
+ */
 function setValidateUNHCR(on) {
     // Add jQuery 'blur' function to UNHCR text box.
     // When UNHCR number is changed and focus leaves, call validation function
     
     if (on) {
-    	updateStorageLocal([{'VALID_UNHCR': true}])
-		.then(function(results) {
+    	updateStorageLocal({'VALID_UNHCR': true}, function(response) {
 			$("#UNHCRIdentifier").blur(function () {
 		        validateUNHCR();
 		    });
 		});
 	} else {
-		updateStorageLocal([{'VALID_UNHCR': false}])
-		.then(function(results) {
+		updateStorageLocal({'VALID_UNHCR': false}, function(response) {
 			$("#UNHCRIdentifier").unbind("blur");
 		});
 	}
@@ -103,22 +102,6 @@ function setValidateAppointmentNo(on) {
 //                            CHROME LISTENERS
 // ========================================================================
 
-// Listener tracks any changes to local storage in chrome console 
-// From here: https://developer.chrome.com/extensions/storage
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-	// console.log('storage changes', changes);
-	for (key in changes) {
-		var storageChange = changes[key];
-		console.log('Storage key "%s" in namespace "%s" changed. ' +
-			'Old value was "%s", new value is "%s".',
-			key,
-			namespace,
-			storageChange.oldValue,
-			storageChange.newValue
-		);
-	}
-});
-
 // "clicked_browser_action" is our point for kicking things off
 chrome.runtime.onMessage.addListener( function(request, MessageSender, sendResponse) {
 	// Kick things off in content.js!
@@ -131,12 +114,14 @@ chrome.runtime.onMessage.addListener( function(request, MessageSender, sendRespo
 	        case "validate_phone":
 	        	setValidatePhoneNo(request.on);
         		break;
-        	case "validate_dates":
-        		changeValidateDates(request.on);
-        		break;
-        	case "validate_appt_no":
-        		changeValidateAppointmentNo(request.on);
-        		break;
+        	// case "validate_dates":
+        	// 	changeValidateDates(request.on);
+        	// 	break;
+        	// case "validate_appt_no":
+        	// 	changeValidateAppointmentNo(request.on);
+        	// 	break;
+			default:
+				console.log('unhandled browser action click!');
 		}
 	} else {
 		console.log('listened to message, but not handled -> ',
@@ -451,93 +436,27 @@ function message(text, option) {
 	}
 }
 
-// save data to local storage
-// @Returns a promise after value(s) have been saved
-// format of valueList:
-// 	[
-// 		{'key1': 'value1'},
-// 		{'key2': 'value2'}
-// 	]
-function updateStorageLocal(valueList) {
-	var storePromises = [];
-	// Check that valueList contains some values.
-	if (!valueList || valueList.length < 1) {
-		message('Error: No value specified to update');
-		// TODO: add null promise here?
-		return;
-	}
-
-	// loop through array valueList:
-	for (var i = 0; i < valueList.length; i++) {
-		var valueObj = valueList[i];
-
-		// tempCount counts # of key / value pairs inside valueObj. If there's more than one, error and quit.
-		var tempCount = 0;
-
-		// vars to store key : value pair from valueObj.
-		var key, value;
-
-		// get key & value in 'valueObj':
-		for (var k in valueObj) {
-			tempCount++;
-			if (tempCount > 1) {
-				reject('Error: Invalid format of valueList - Cannot store to local storage', 3);
-				return;
-			}
-
-			key = k; value = valueObj[k];
-		}
-
-		/* ============== EXPLANATION FOR KEYS =============
-				VALID_UNHCR   -	holds the on/off (true / false) value for each field
-				VALID_PHONE
-				VALID_DATES
-				VALID_APPT
-		*/
-		switch (key) {
-			case 'VALID_UNHCR':
-				var validateUNHCR = value;
-				storePromises.push(
-					saveValueToStorage('VALID_UNHCR', validateUNHCR)
-				);
-				break;
-			case 'VALID_PHONE':
-				var validatePhone = value;
-				storePromises.push(
-					saveValueToStorage('VALID_PHONE', validatePhone)
-				);
-				break;
-			case 'VALID_DATES':
-				var validateDates = value;
-				storePromises.push(
-					saveValueToStorage('VALID_DATES', validateDates)
-				);
-				break;
-			case 'VALID_APPT':
-				if (value === true) {
-					storePromises.push( saveValueToStorage('VALID_APPT', true) )
-				} else {
-					storePromises.push( saveValueToStorage('VALID_APPT', false) );
-				}
-				break;
-		}
-	}
-
-	return Promise.all(storePromises);
-}
-
-// Function returns a promise w/ a message stating the key / value pair were stored successfully
-// TODO: maybe do some type of validation on input / output.
-function saveValueToStorage(key, value) {
-	return new Promise( function(resolve, reject) {
-		var obj = {};
-		obj[key] = value;
-
-		chrome.storage.local.set(obj, function() {
-			// successful
-			resolve('Saved: ' + key + ':' + value);
-		});
-	});
+/**
+ * Function sends data to background.js for storage.
+ * 
+ * Format of dataObj: {
+ * 		key1: value1,
+ * 		key2: value2
+ * }
+ * 
+ * @param {object} dataObj obj with all key:value pairs to store to chrome local storage
+ * @param {function} callback function to call after data is stored
+ * @returns nothing at this time
+ */
+function updateStorageLocal(dataObj, callback) {
+	// set up message config object
+	var mObj = {
+		action: 'store_data_to_chrome_storage_local',
+		dataObj: dataObj
+	};
+	
+	// send message config to background.js
+	chrome.runtime.sendMessage(mObj, callback);
 }
 
 // Function returns a promise w/ the value from chrome data storage key:value pair
@@ -553,6 +472,7 @@ function getValueFromStorage(key) {
 }
 
 // Function returns a promise (promise.all) with the returned values from given keys
+// TODO: move to background.js
 function getMultipleValuesFromStorage(keys) {
 	var promises = [];
 
@@ -598,7 +518,7 @@ function getMultipleValuesFromStorage(keys) {
     //  is acceptable. If not, a swal error will be thrown.
     
   //   if (on) {
-  //   	updateStorageLocal([{'VALID_DATES': true}])
+  //   	updateStorageLocal({'VALID_DATES': true})
 		// .then(function(results) {
 			// debugger;
 			// Date of Birth:
@@ -625,7 +545,7 @@ function getMultipleValuesFromStorage(keys) {
 			// $("input#LRSDDATE").on('change', dateChange);
 	// 	});
 	// } else {
-	// 	updateStorageLocal([{'VALID_DATES': false}])
+	// 	updateStorageLocal({'VALID_DATES': false})
 	// 	.then(function(results) {
 			// Date of Birth:
 			// $("input#LDATEOFBIRTH").off('focusin', dateFocusIn);

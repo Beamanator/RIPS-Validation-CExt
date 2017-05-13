@@ -46,8 +46,8 @@ function initializeValidationCheckboxes() {
 		if ( typeof(valPhone) === 'boolean')
 			$('input[value="validate_phone"]').prop('checked', valPhone);
 
-		// if (valDates === true) { $('input[value="validate_dates"]').click(); }
-		// if (valAppt === true)  { $('input[value="validate_appt_no"]').click(); }
+		// if (valDates === true) { $('input[value="validate_dates"]').prop(); }
+		// if (valAppt === true)  { $('input[value="validate_appt_no"]').prop(); }
 	});
 }
 
@@ -57,7 +57,7 @@ function initScript() {
 
 	// adding click event binding to validation checkboxes
 	$('input[type="checkbox"]').click(function() {
-		console.log('clicked', $(this).val());
+		// console.log('clicked', $(this).val());
 		
 		var val = $( this ).val();
 		var state = $( this ).prop('checked');
