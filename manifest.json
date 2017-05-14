@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "0.1.3",
+	"version": "0.1.4",
 
 	"description": "RIPS Extension - Adds validation on UNHCR # and Phone #",
 
@@ -32,6 +32,7 @@
 				"js/jquery-3.1.1.min.js",
 				"js/ErrorThrowingAPI.js",
 				"js/SetupSubmitListeners-v0.0.1.js",
+				"js/ViewManipulator.js",
 
 				"js/MainContent.js"
 				// TODO: potential to add lots of stuff here

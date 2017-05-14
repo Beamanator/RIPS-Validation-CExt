@@ -57,7 +57,6 @@ function initScript() {
 
 	// adding click event binding to validation checkboxes
 	$('input[type="checkbox"]').click(function() {
-		// console.log('clicked', $(this).val());
 		
 		var val = $( this ).val();
 		var state = $( this ).prop('checked');

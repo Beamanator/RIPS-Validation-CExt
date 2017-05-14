@@ -75,8 +75,8 @@ function setupRipsSubmitListeners(url) {
 	else if ( urlHas(url, ripsPages.AddAction.urlPiece) )
 			handleSubmit(ripsPages.AddAction.submitConfig);
 
-	else if ( urlHas(url, ripsPages.AddService.urlPiece) )
-			handleSubmit(ripsPages.AddService.submitConfig);
+	// else if ( urlHas(url, ripsPages.AddService.urlPiece) )
+	// 		handleSubmit(ripsPages.AddService.submitConfig);
 
 	// else if ( urlHas(url, ripsPages.AdvancedSearch.urlPiece) )
 	// 		handleSubmit(ripsPages.AdvancedSearch.submitConfig);

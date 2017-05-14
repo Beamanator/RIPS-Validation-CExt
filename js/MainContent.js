@@ -2,7 +2,7 @@ $(document).ready(function(){
 	loadValidation();
 	loadSubmitListeners();
 	// TODO: add view manipulator function which will remove / move DOM elements
-	// loadViewManipulator();
+	loadViewManipulator();
 });
 
 // Loads validation settings from local storage
@@ -36,9 +36,13 @@ function loadValidation() {
 	});
 }
 
-// loads / sets listeners on "submit" buttons, depending on the page URL
-// -> 1 purpose = cancel "submit" if internet is disconnected so data doesn't
-//    get wiped upon page attempting to refresh
+/**
+ * Function loads / sets listeners on "submit" buttons, depending on the page URL
+ * 
+ * Purpose = cancel "submit" event if internet is disconnected or validation failed
+ * so that data doesn't get lost upon page refresh 
+ * 
+ */
 function loadSubmitListeners() {
 	// get current page URL
 	var pageURL = $(location).attr('href');
@@ -48,6 +52,13 @@ function loadSubmitListeners() {
 
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
+
+function loadViewManipulator() {
+	var pageURL = $(location).attr('href');
+	var username = $('a.username[title="Manage"]').text();
+
+	Manipulate(pageURL, username);
+}
 
 // ========================================================================
 //                       CHANGE -> VALIDATION FUNCTIONS
