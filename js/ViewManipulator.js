@@ -22,9 +22,14 @@ function Manipulate(url, username) {
         // mMoveNeighborhoodButton(username);
     }
     
-    // Vies Services page (Note: just viewing services page, not actual adding service page)
+    // View Services Page (Note: just viewing services page, not actual adding service page)
     else if ( urlHas(url, 'ClientDetails/ClientServicesList') ) {
-        mHideEmptyServiceBoxes(username, userExceptionHolder.hideEmptyServiceBoxes);
+        mHideEmptyServiceBoxes();
+    }
+
+    // History Page
+    else if ( urlHas(url, 'MatterAction/ActionHistoryList') ) {
+        mCleanNoteText();
     }
 }
 
@@ -33,6 +38,31 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 // ========================================================================
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
+
+function mCleanNoteText() {
+    // get every cell in Attendance Notes column
+    var $tableHead = $('div#gridContent table thead');
+    var $tableBody = $('div#gridContent table tbody');
+
+    var $rows = $tableBody.find('tr');
+
+    $rows.each( function(index, elem) {
+        var $cells = elem.getElementsByTagName('td'); 
+        var cell = $cells[$cells.length - 1];
+        
+        // get note as string from html
+        var $note = cell.innerHTML;
+
+        // html convert
+        $note = rep($note, '&amp;', '&');
+
+        // innerText convert
+        $note = rep($note, '&#39;', '\'');
+
+        // now put converted text back into html
+        cell.innerHTML = $note;
+    });
+}
 
 /**
  * Function hides delete button for all non-exempt users
@@ -112,4 +142,19 @@ function urlHas(url, text) {
 		return false;
 	else
 		return true;
+}
+
+/**
+ * Function replaces pieces of a string with a replacement string
+ * using a pattern, turned into an RegExp
+ * 
+ * @param {any} orig the original string
+ * @param {any} pattern pattern to log for in original string
+ * @param {any} replacement string that will replace pattern text
+ * @returns original string, with replacements
+ */
+function rep(orig, pattern, replacement) {
+    var regex = new RegExp(pattern, 'g');
+
+    return orig.replace(regex, replacement);
 }
