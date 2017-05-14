@@ -11,12 +11,14 @@
 		"tabs"
 	],
 	"browser_action": {
-		"default_icon": "icon.png",
+		"default_icon": {
+			"32": "img/icon32.ico" // unpacked exts need .png :)
+		},
 		"default_popup": "html/popup.html"
 	},
 	"icons": {
-		"48": "icon48.png",
-    	"128": "icon128.png"
+		"48": "img/icon48.png",
+    	"128": "img/icon128.png"
     },
 
     "content_scripts": [
