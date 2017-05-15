@@ -15,6 +15,11 @@ function Manipulate(url, username) {
         hideEmptyServiceBoxes: []
     };
 
+    // Registration Page
+    if ( urlHas(url, 'Registration/Registration') ) {
+        mEnableDataRecovery();
+    }
+
     // Client Basic Information Page
     if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
         mHideDeleteButton(username, userExceptionHolder.hideDeleteButton);
@@ -39,6 +44,23 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
 
+function mEnableDataRecovery() {
+    var recoverHTML = '<div id="restore-ui">'
+            + '<span id="restore-ui-content">'
+                + 'Found lost data'
+            + '</span>'
+            + '<button id="restore-ui-action">'
+                + 'Recover'
+            + '</button>'
+        + '</div>';
+
+    $('body').append(recoverHTML);
+}
+
+/**
+ * Function cleans attendance note text from "History" page by running note
+ * text through some regex replacements, then pasting the data back into the page.
+ */
 function mCleanNoteText() {
     // get every cell in Attendance Notes column
     var $tableHead = $('div#gridContent table thead');

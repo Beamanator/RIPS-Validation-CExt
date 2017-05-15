@@ -53,6 +53,12 @@ function loadSubmitListeners() {
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
 
+/**
+ * Function is responsible for changing the view for different purposes
+ * 
+ * examples: hiding elements, changing html data, adding html elements 
+ * 
+ */
 function loadViewManipulator() {
 	var pageURL = $(location).attr('href');
 	var username = $('a.username[title="Manage"]').text();

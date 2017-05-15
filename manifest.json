@@ -26,7 +26,8 @@
 			"matches": [ "http://rips.247lib.com/*" ],
 			"css": [
 				"css/offline.js-0.7.13/offline-language-english.css",
-				"css/offline.js-0.7.13/offline-theme-chrome.css"
+				"css/offline.js-0.7.13/offline-theme-chrome.css",
+				"css/restore.css"
 			],
 			"js": [
 				"js/offline.js-0.7.13/offline.js",
