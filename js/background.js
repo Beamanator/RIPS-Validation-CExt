@@ -131,6 +131,8 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 				VALID_PHONE
 				VALID_DATES   - N/A
 				VALID_APPT    - N/A
+
+                CACHED_DATA   - Stores saved data in case RIPS timed out
 		*/
 		switch (key) {
             // Recent update: all validation keys can just automatically store data, no need
@@ -142,10 +144,16 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 				// );
                 storePromises.push( saveValueToStorage(key, dataValue) );
 				break;
-
+            
+            // store data directly to local storage
 			case 'VALID_PHONE':
 				storePromises.push( saveValueToStorage(key, dataValue) );
 				break;
+
+            // store data directly to local storage
+            case 'CACHED_DATA':
+                storePromises.push( saveValueToStorage(key, dataValue) );
+                break;
 
             default:
                 // log errored key to background console:

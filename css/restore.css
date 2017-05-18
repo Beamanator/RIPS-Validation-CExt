@@ -2,6 +2,7 @@
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
 }
+/*Outer shell div*/
 #restore-ui {
     display: none;
     position: fixed;
@@ -19,6 +20,7 @@
     background-image: linear-gradient(left, red 8%, black);
     
 }
+/*action button*/
 #restore-ui #restore-ui-action {
     -webkit-user-select: none;
     user-select: none;

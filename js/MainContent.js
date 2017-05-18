@@ -84,7 +84,7 @@ function setValidatePhoneNo(on) {
     if (on) {
     	updateStorageLocal({'VALID_PHONE': true}, function(response) {
 			$("#" + getPhoneElemID() ).blur(function () {
-		        validatePhoneNo();
+		        validatePhoneNo(true);
 		    });
 		});
 	} else {
@@ -108,7 +108,7 @@ function setValidateUNHCR(on) {
     if (on) {
     	updateStorageLocal({'VALID_UNHCR': true}, function(response) {
 			$("#UNHCRIdentifier").blur(function () {
-		        validateUNHCR();
+		        validateUNHCR(true);
 		    });
 		});
 	} else {
@@ -165,8 +165,11 @@ chrome.runtime.onMessage.addListener( function(request, MessageSender, sendRespo
  *		valid 'Old' format: ####/YYYY
  *		valid 'Pre-card' format: ###-CS########
  *		valid 'Unknown' / 'None' format: 'None'
+ * 
+ * @param {boolean} throwErrorFlag if true, errors is thrown. If false, is not thrown
+ * @returns boolean for valid fields (true = valid, false = invalid) 
  */
-function validateUNHCR() {
+function validateUNHCR(throwErrorFlag) {
 
     // can use '\\n' to enter text on a new line if needed
     function throwUnhcrError(message, fatal) {
@@ -185,7 +188,8 @@ function validateUNHCR() {
 
     	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
     	// -> log error message to console
-    	if (!ThrowError) {
+		// also if throwErrorFlag is false, just throw console error.
+    	if (!ThrowError || !throwErrorFlag) {
     		console.error(msg);
     		return;
     	}
@@ -322,15 +326,19 @@ function validateUNHCR() {
     // throwUnhcrError('Note: Added [-] to UNHCR Number', 0);
 }
 
-/* 
-	Validates if main Phone Number is valid in this format:
-	#-###-###-####
-	Notes about formatting function:
-		Turns 'I' and 'L' into 1's
-		Turns 'O' into 0's
-		Removes all other characters that aren't numbers
-*/
-function validatePhoneNo() {
+/**
+ * Validates if main Phone number is valid (11 numbers):
+ * If only 10, add leading 0 and warn user
+ * 
+ * Notes about formatting function:
+ * 		Turns 'I' and 'L' into 1's
+ * 		Turns 'O' into 0's
+ * 		Removes all other characters that aren't numbers
+ * 
+ * @param {boolean} throwErrorFlag if true, errors is thrown. If false, is not thrown
+ * @returns boolean for valid field (true = valid, false = invalid) 
+ */
+function validatePhoneNo(throwErrorFlag) {
 	function formatNum(num) {
 		// use a regexp to replace 'I' or 'L' with '1'
 		// num = num.replace(/[IL]/g,'1');
@@ -348,8 +356,12 @@ function validatePhoneNo() {
     function throwPhoneNoError(message, fatal) {
     	var title;
 
-    	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist, quit
-    	if (!ThrowError || !message) return;
+    	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
+		// or no message, or throwErrorFlag is falss -> quit
+    	if (!ThrowError || !message || !throwErrorFlag) {
+			console.log('Phone # Error: ', message);
+			return;
+		}
 
     	// if fatal flag is set, show different title on swal
     	if (fatal) {

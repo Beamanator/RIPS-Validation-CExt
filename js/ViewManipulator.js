@@ -12,7 +12,7 @@ function Manipulate(url, username) {
     // Note: all contents of this obj should be LOWER-CASE!
     var userExceptionHolder = {
         hideDeleteButton: ['staff'],
-        hideEmptyServiceBoxes: []
+        hideEmptyServiceBoxes: ['staff']
     };
 
     // Registration Page
@@ -22,14 +22,16 @@ function Manipulate(url, username) {
 
     // Client Basic Information Page
     if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
-        mHideDeleteButton(username, userExceptionHolder.hideDeleteButton);
+        mHideDeleteButton(username,
+            userExceptionHolder.hideDeleteButton);
         // mAddArchiveEmail(username);
         // mMoveNeighborhoodButton(username);
     }
     
     // View Services Page (Note: just viewing services page, not actual adding service page)
     else if ( urlHas(url, 'ClientDetails/ClientServicesList') ) {
-        mHideEmptyServiceBoxes();
+        mHideEmptyServiceBoxes(username,
+            userExceptionHolder.hideEmptyServiceBoxes);
     }
 
     // History Page
@@ -44,6 +46,10 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
 
+/**
+ * Function adds data recovery button to registration page
+ * 
+ */
 function mEnableDataRecovery() {
     var recoverHTML = '<div id="restore-ui">'
             + '<span id="restore-ui-content">'
@@ -55,6 +61,10 @@ function mEnableDataRecovery() {
         + '</div>';
 
     $('body').append(recoverHTML);
+
+    // TODO: here we check if recovery data is available. if it is
+    // unhide #restore-ui
+    
 }
 
 /**

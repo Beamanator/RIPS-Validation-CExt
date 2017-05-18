@@ -18,39 +18,29 @@ function setupRipsSubmitListeners(url) {
 		Registration: {
 			urlPiece: "Registration/Registration",
 			submitConfig: {
-				formActions: ['/Stars/Registration/Registration'],
-				doValidation: true
+				doValidation: true,
+				storeLocal: true
 			}
 		},
 		ClientBasicInformation: {
 			urlPiece: "ClientDetails/ClientDetails",
 			submitConfig: {
-				formActions: [
-					'/Stars/ClientDetails/UpdateClientDetails',
-					'/Stars/ClientDetails/updateClntVulnerabilities',
-					'/Stars/ClientDetails/SaveDependentStats'
-				],
-				// if clicked button has this 'value' prop, skip submission handling
-				// Note: indices must match formActions
-				elemValueSkip: [
-					'Delete'
-				],
-				doValidation: true
+				doValidation: true,
+				storeLocal: true
 			}
-			// elemSelector: 'form[action="/Stars/ClientDetails/UpdateClientDetails"] input[type="submit"][value="Save"]'
 		},
 		AddAction: {
 			urlPiece: "MatterAction/CreateNewAction",
 			submitConfig: {
-				formActions: ['/Stars/MatterAction/CreateNewAction'],
-				doValidation: false
+				doValidation: false,
+				storeLocal: true
 			}
 		},
 		AddService: {
 			urlPiece: "MatterAction/CreateNewServices",
 			submitConfig: {
-				formActions: ['/Stars/MatterAction/CreateServices'],
-				doValidation: false
+				doValidation: false,
+				storeLocal: false
 			}
 		}
 		// Added as a comment - someone suggested adding this, but may not actually be
@@ -101,92 +91,129 @@ function setupRipsSubmitListeners(url) {
  * @returns true if submitNow flag set to 'true', otherwise prevents form submission
  */
 function handleSubmit(config) {
-	var formActions = config.formActions;
 	var validateFlag = config.doValidation;
+	var storeLocalFlag = config.storeLocal;
 
-	var elemValuesToSkip = config.elemValueSkip;
-	if (elemValuesToSkip == undefined) elemValuesToSkip = [];
+	/* new idea:
+		1. get button click
+		2. get parent form's action
+		3. set submit listener
+		4. automatically pretent default
+		5. check for everything (valid, offline, store)
+		6. on 2nd round, set data param & allow submit
+	*/
+	$('input[value="Save"]').one('click', function(e_click) {
+		$thisButton = $(this);
+		$parentForm = $thisButton.closest('form');
 
-	for (let i = 0; i < formActions.length; i++) {
-		$('form[action="' + formActions[i] + '"]').submit(function(event) {
-			var $thisForm = $(this);
-
-			// get value of clicked element b/c it's possible 2 or more buttons / elements
-			// can submit the same form!
-			var clickedElemValue = $(document.activeElement).val();
-			var valToSkip = elemValuesToSkip[i];
-
-			if (
-				/* there's a valid element value name to skip */
-				valToSkip !== undefined &&
-				valToSkip !== ''
-			) {
-				// example: Delete button [skip form submission validation & stuff]
-				if (clickedElemValue.toUpperCase() === valToSkip.toUpperCase())
-					return true;
-			}
-
-			// check for submitNow flag (set if all checks pass)
-			if ( $thisForm.data().submitNow === 'true' )
+		$parentForm.submit(function(e_submit) {
+			// debugger;
+			if ( $parentForm.data().submitNow === 'true' )
 				return true;
+			
+			else
+				e_submit.preventDefault();
 
-			// check valid
-			if (validateFlag) {
-				// first prevent default
-				event.preventDefault();
+			// now do all of the promises checks :)
+			var p_container = [];
 
-				// then do validation - true, so have to check validation
-				doValidationCheck(validateFlag)
-				.then( function(fieldsValidFlag) {
-					evaluateSubmit(fieldsValidFlag, false, $thisForm);
-				});
-			} else {
-				evaluateSubmit(true, event);
-			}
+			if (validateFlag)
+				p_container.push( doValidationCheck(validateFlag) );
+
+			p_container.push( doOfflineCheck() );
+
+			if (storeLocalFlag)
+				p_container.push( doStoreLocal($parentForm) );
+
+			Promise.all(p_container)
+			.then(function(responses) {
+				// get config objects from responses
+				var check_valid_err_config = responses[0],
+					check_offline_err_config = responses[1],
+					check_store_err_config = responses[2];
+
+				var allPass = true,
+					errAPI = true;
+
+				// if ThrowError API isn't available, set flag to only throw
+				// console errors
+				if (!ThrowError)
+					errAPI = false;
+
+				// loop through err configs to determine if each passed and
+				// when to throw ONE error (only one)
+				for (let config of [
+					check_valid_err_config,
+					check_offline_err_config,
+					check_store_err_config
+				]) {
+					// if config isn't in proper format, skip it
+					if (!config) continue;
+
+					// if check failed, throw error and quit loop
+					if (config.pass === false) {
+						var errConfig = {
+							title: config.title,
+							message: config.message,
+							errMethods: ['mConsole', 'mSwal']
+						};
+						errAPI ? ThrowError(errConfig) : console.log(errConfig.message);
+						allPass = false;
+						break;
+					}
+				}
+
+				// condition for retrigger:
+				if ( allPass ) {
+					$parentForm.data({'submitNow': 'true'});
+					$parentForm.trigger('submit');
+				}
+			}); 
 		});
-	}
+	});;
 }
 
 /**
- * Function handles final extra submission details & flags for form submission
+ * Function stores saved Form data into chrome local storage. Data can then
+ * be recovered by restore button
  * 
- * Note: really annoying logic below was needed b/c Add Action didn't like saving attendance
- * notes when the 'submit' was called twice (prevented, then called again)
- * 
- * @param {any} fieldsValidFlag true if fields are valid or if validation isn't needed
- * @param {any} event submission event, or false if coming from validation code (default already prevented)
+ * @param {object} $form jQuery object with all form data
+ * @returns promise - resolves with error config
  */
-function evaluateSubmit( fieldsValidFlag, event, $thisForm ) {
-	// throw offline error if fields are valid
-	// if fields aren't valid, error already thrown by doValidationCheck()
-	var throwOfflineError = fieldsValidFlag;
-	var offlineFlag = doOfflineCheck( throwOfflineError );
+function doStoreLocal($form) {
+	return new Promise(function(resolve, reject) {
+		// skip certain values, for whatever reason:
+		var namesToSkip = [
+			'IsAttendanceNote' // 2 of them on "Add Action" page! one is true, one is false, default is true
+		];
 
-	// this situation is for 1) not validating fields and 2) offline
-	if (offlineFlag && event)
-		event.preventDefault();
+		// really, eventually we store / retrieve data from background.js
+		$formData = $form.serializeArray();
+		var dataObj = {'CACHED_DATA': {}};
 
-	// If everything is okay, check if we came from validating fields or no.
-	if (
-		fieldsValidFlag &&	// true if all fields are valid
-		!offlineFlag		// true if offline
-	) {
-		if (!event) {
-			$thisForm.data({ 'submitNow': 'true' });
-			$thisForm.trigger('submit');
-		} else {
-			// hopefully don't need to do anything since it should just submit?
+		for (let $elem of $formData) {
+			// if value isn't empty & we don't need to skip the elem name:
+			if ($elem.value !== '' && namesToSkip.indexOf($elem.name) === -1)
+				dataObj.CACHED_DATA[$elem.name] = $elem.value;
 		}
-	}
+
+		var mObj = {
+			action: 'store_data_to_chrome_storage_local',
+			dataObj: dataObj
+		};
+
+		chrome.runtime.sendMessage(mObj, function(response) {
+			resolve({pass: true});
+		});
+	});
 }
 
 /**
  * Runs a check for online / offline status. If offline, throws an error 
  * 
- * @param {boolean} [throwErrorFlag=true] if true and offline, throw error
  * @returns {boolean} offline state (true === offline, false === online)
  */
-function doOfflineCheck(throwErrorFlag = true) {
+function doOfflineCheck() {
 	// if Offline isn't found, quit & allow default to happen
 	if (!Offline) {
 		console.log('Offline.js not found -> Continue like normal');
@@ -205,25 +232,15 @@ function doOfflineCheck(throwErrorFlag = true) {
 			+ '\\nInternet connection is ' + offlineStatus
 			+ '\\nPlease retry when internet is up again.';
 
-		// throw swal error if available & flag is true
-		if (ThrowError && throwErrorFlag) {
-			ThrowError({
-				title: 'Connection Problem',
-				message: statusMessage,
-				errMethods: ['mSwal', 'mConsole']
-			});
-		}
-		// throw alert if ThrowError isn't imported
-		else {
-			alert(statusMessage);
-			console.log(statusMessage);
-		}
-
-		// true = is offline.
-		return true;
+		// true = is offline. so pass = false
+		return {
+			pass: false,
+			title: 'Connection Problem',
+			message: statusMessage
+		};
 	} else {
 		// online, return false (not offline = false offline)
-		return false;
+		return { pass: true };
 	}
 }
 
@@ -253,6 +270,7 @@ function doValidationCheck(validateFlag) {
 		// send data to background.js
 		chrome.runtime.sendMessage(mObj, function(response) {
 			var responseKey = mObj.key;
+			var err_config = {};
 
 			// successes should come back in the same order, so:
 			var valUNHCR = response[responseKey + '0'];
@@ -264,15 +282,23 @@ function doValidationCheck(validateFlag) {
 
 			// if vals are true, validate those fields.
 			// if vals are undefined, default is to do the same!
-			if ( fieldsValidFlag && 
-					(valUNHCR === true || valUNHCR === undefined ))
-				fieldsValidFlag = validateUNHCR();
+			if ( fieldsValidFlag && valUNHCR !== false) {
+				fieldsValidFlag = validateUNHCR(false);
+				if (!fieldsValidFlag)
+					err_config['message'] = 'Check UNHCR number';
+			}
 
-			if ( fieldsValidFlag &&
-					(valPhone === true || valPhone === undefined ))
-				fieldsValidFlag = validatePhoneNo();
+			if ( fieldsValidFlag && valPhone !== false) {
+				fieldsValidFlag = validatePhoneNo(false);
+				if (!fieldsValidFlag)
+					err_config['message'] = 'Check phone number';
+			}
+
+			// if fields valid, pass validation. and vice verca
+			err_config['pass'] = fieldsValidFlag;
+			err_config['title'] = 'Error: Invalid field format';
 			
-			resolve(fieldsValidFlag);
+			resolve(err_config);
 		});
 	});
 }
