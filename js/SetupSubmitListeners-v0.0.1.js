@@ -167,6 +167,18 @@ function handleSubmit(config) {
 				if ( allPass ) {
 					$parentForm.data({'submitNow': 'true'});
 					$parentForm.trigger('submit');
+				} else {
+					// clear stored data from database since pass failed
+					var mObj = {
+						action: 'clear_data_from_chrome_storage_local',
+						dataObj: {
+							'CACHED_DATA': ''
+						},
+						noCallback: true
+					};
+
+					// not sending a callback function b/c not necessary here
+					chrome.runtime.sendMessage(mObj);
 				}
 			}); 
 		});
@@ -193,6 +205,8 @@ function doStoreLocal($form) {
 
 		for (let $elem of $formData) {
 			// if value isn't empty & we don't need to skip the elem name:
+			// TODO: deal with multiple elements w/ same name
+			// example: attendance notes has 2 elements w/ same name!
 			if ($elem.value !== '' && namesToSkip.indexOf($elem.name) === -1)
 				dataObj.CACHED_DATA[$elem.name] = $elem.value;
 		}

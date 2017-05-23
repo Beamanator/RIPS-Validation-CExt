@@ -18,10 +18,10 @@ var config = {
 /* mObj             object containing config and data
  *                  {
  *               		action: "get_data_...",
- *               		key: 'keyName',           // -> Default = 'key',
- *               		'keyName'0: val0,
- *               		'keyName'1: val1,
- *               		...	
+ *               		dataObj: {
+ *                          'key1': value1,
+ *                          'key2': value2
+ *                      }
  *               	}
  * MessageSender    chrome object that holds information about message sender (ex: tab id)
  * sendResponse     callback function for message sender
@@ -29,9 +29,13 @@ var config = {
 chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse) {
     var action = mObj.action;
     var async = false;
+    var noCallback = mObj.noCallback;
 
     // set default key:
     if (!mObj.key) mObj.key = 'key';
+
+    // kill callback if noCallback flag is true
+    if (noCallback) sendResponse = undefined;
 
     switch(action) {
 
@@ -45,6 +49,13 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
         // save data to chrome's local storage
         case 'store_data_to_chrome_storage_local':
             storeToChromeLocalStorage(mObj, sendResponse);
+            // async because uses promises
+            async = true;
+            break;
+
+        // clear data from keys in mObj.dataObj [clear means set to '']
+        case 'clear_data_from_chrome_storage_local':
+            clearDataFromChromeLocalStorage(mObj, sendResponse);
             // async because uses promises
             async = true;
             break;
@@ -163,8 +174,33 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 
 	Promise.all(storePromises)
     .then( function(responseMessageArr) {
-        responseCallback( responseMessageArr );
+        // if responseCallback isn't real, just console log the message
+        if (responseCallback)
+            responseCallback( responseMessageArr );
+        else
+            console.log('store messages: ',responseMessageArr);
     });
+}
+
+/**
+ * Function clears all store data in chrome local storage for passed-in keys
+ * 
+ * Keys should be pased in serialized, like this:
+ * {
+ *      'CACHED_DATA': '',
+ *      'VALID_PHONE': '',
+ *      ... etc
+ * }
+ * 
+ * @param {any} mObj message config object holding data keys object
+ * @param {any} responseCallback callback function (may be undefined)
+ */
+function clearDataFromChromeLocalStorage(mObj, responseCallback) {
+    var dataObj = mObj.dataObj;
+
+    storeToChromeLocalStorage({
+        dataObj: dataObj
+    }, responseCallback);    
 }
 
 // ===============================================================
@@ -260,8 +296,16 @@ function saveValueToStorage(key, value) {
 		obj[key] = value;
 
 		chrome.storage.local.set(obj, function() {
-			// successful
-			resolve('Saved: ' + key + ':' + value);
+            // if value is empty, it's a data clear (not store)
+            var message = '';
+
+            if (value === '')
+                message = 'Cleared: ' + key;
+            else
+                message = 'Saved: ' + key + ':' + value;
+
+            // send message back to caller
+			resolve(message);
 		});
 	});
 }
