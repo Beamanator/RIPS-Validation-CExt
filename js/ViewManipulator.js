@@ -4,6 +4,8 @@
  * Specific manipulation is based on the specific page that is loaded
  * AND specific user that is logged in
  * 
+ * Called from: MainContent.js [loadViewManipulator()]
+ * 
  * @param {string} url of specific page
  * @param {string} username of logged in user
  */
@@ -115,6 +117,7 @@ function mEnableDataRecovery(url) {
     chrome.runtime.sendMessage(mObj, function(response) {
         var cachedDataObj = response['CACHED_DATA'];
 
+        debugger;
         // get url piece from cached data - indicates url where cached data was stored
         var urlPiece = cachedDataObj.URL_PIECE;
 
