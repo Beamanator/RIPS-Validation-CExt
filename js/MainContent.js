@@ -1,7 +1,7 @@
 $(document).ready(function(){
 	loadValidation();
 	loadSubmitListeners();
-	// loadViewManipulator(); // -> removed b/c need to publish other changes first
+	loadViewManipulator();
 });
 
 // Loads validation settings from local storage

@@ -52,11 +52,14 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 // ========================================================================
 
 /**
+ * FIXME: remove initial 'return' statement to actually enable data recovery
  * Function adds data recovery button to page IFF 'CACHED_DATA' is availble from local storage
  * 
  * @param {string} url url of current page
  */
 function mEnableDataRecovery(url) {
+    return;
+
     // TODO: check if error is present on the page. If so, store error flag?
     // not sure if error flag will be 'true' or true (string or boolean)
 
