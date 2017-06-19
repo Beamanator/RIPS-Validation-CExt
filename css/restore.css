@@ -20,36 +20,45 @@
     background-image: linear-gradient(left, red 8%, black);
     
 }
-/*action button*/
-#restore-ui #restore-ui-action {
+/*action button and clear button*/
+#restore-ui #restore-ui-action, #restore-ui #restore-ui-clear {
     -webkit-user-select: none;
     user-select: none;
-    margin-left: 3em;
 
     -webkit-appearance: button;
-    background-color: #5cb85c;
-    border-color: #4cae4c;
     color: #fff;
     padding: 6px 12px;
     margin-bottom: 0;
-    font-size: 14px;
-    font-weight: 400;
     text-align: center;
     vertical-align: middle;
     background-image: none;
     border-radius: 4px;
     /*display: none;*/
 }
-#restore-ui #restore-ui-action:before {
+#restore-ui #restore-ui-action:before, #restore-ui #restore-ui-clear::before {
     display: inline;
+}
+/*individual button*/
+#restore-ui #restore-ui-action {
+    margin-left: 2.7em;
+
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+#restore-ui #restore-ui-clear {
+    margin-left: 8px;
+
+    background-color: #d9534f;
+    border-color: #d43f3a;
 }
 #restore-ui {
     -webkit-box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 1em rgba(0, 0, 0, 0.3);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 1em rgba(0, 0, 0, 0.3);
     font-family: "Lucida Grande", sans-serif;
     font-size: 14px;
+    font-weight: 400;
     padding: 1em;
-    width: 20em;
+    width: 25em;
     max-width: 100%;
     /*background: #f6f6f6;*/
     color: white;

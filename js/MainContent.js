@@ -1,7 +1,6 @@
 $(document).ready(function(){
 	loadValidation();
 	loadSubmitListeners();
-	// TODO: add view manipulator function which will remove / move DOM elements
 	loadViewManipulator();
 });
 
@@ -50,9 +49,6 @@ function loadSubmitListeners() {
 	SetupSubmitListeners(pageURL);
 }
 
-function getUnhcrElemID() { return 'UNHCRIdentifier'; }
-function getPhoneElemID() { return 'CDAdrMobileLabel'; }
-
 /**
  * Function is responsible for changing the view for different purposes
  * 
@@ -65,6 +61,9 @@ function loadViewManipulator() {
 
 	Manipulate(pageURL, username);
 }
+
+function getUnhcrElemID() { return 'UNHCRIdentifier'; }
+function getPhoneElemID() { return 'CDAdrMobileLabel'; }
 
 // ========================================================================
 //                       CHANGE -> VALIDATION FUNCTIONS

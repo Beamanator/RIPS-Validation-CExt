@@ -17,13 +17,14 @@ function Manipulate(url, username) {
 
     // Registration Page
     if ( urlHas(url, 'Registration/Registration') ) {
-        mEnableDataRecovery();
+        mEnableDataRecovery(url);
     }
 
     // Client Basic Information Page
     if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
         mHideDeleteButton(username,
             userExceptionHolder.hideDeleteButton);
+        mEnableDataRecovery(url);
         // mAddArchiveEmail(username);
         // mMoveNeighborhoodButton(username);
     }
@@ -38,6 +39,8 @@ function Manipulate(url, username) {
     else if ( urlHas(url, 'MatterAction/ActionHistoryList') ) {
         mCleanNoteText();
     }
+
+    // TODO: Add Add Action Page [mEnableDataRecovery]
 }
 
 function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of elem inside table displaying selected service information
@@ -47,24 +50,160 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 // ========================================================================
 
 /**
- * Function adds data recovery button to registration page
+ * Function adds data recovery button to page IFF 'CACHED_DATA' is availble from local storage
  * 
+ * @param {string} url url of current page
  */
-function mEnableDataRecovery() {
-    var recoverHTML = '<div id="restore-ui">'
-            + '<span id="restore-ui-content">'
-                + 'Found lost data'
-            + '</span>'
-            + '<button id="restore-ui-action">'
-                + 'Recover'
-            + '</button>'
-        + '</div>';
+function mEnableDataRecovery(url) {
+    // TODO: check if error is present on the page. If so, store error flag?
+    // not sure if error flag will be 'true' or true (string or boolean)
 
-    $('body').append(recoverHTML);
+    /* timeout details:
+        Registration Page:
+            -> Incredibly long timeout - clicked "Save"
+                result: login page (with this url:
+                http://rips.247lib.com/Stars/User/Login?ReturnUrl=%2fStars%2fClientDetails%2fClientDetails)
+        Client Basic Iinformation
+            -> click 'Save' after timeout
+                result: Login page (no popup warning / anything)
+    */
 
-    // TODO: here we check if recovery data is available. if it is
-    // unhide #restore-ui
+    /*
+        FIXME: [new idea = new color, not a fixme moment]
+        Currently we already have button working & storing CACHED data working
+            we only need to limit when to show recovery html
+            -> This will be shown when:
+                - CACHED_DATA is available
+                    and either
+                1) error flag was stored
+                    or
+                2) recent login flag was stored
+
+        The pages that will maybe need to check for error text are:
+            Client Basic information (for cbi / registration saves)
+                Check if error exists
+            TODO: Action page
+                Check if error exists
+        The pages that will need to check HISTORY are:
+            Login page
+                Check history for most recent rips page being Reg or CBI
+                TODO: or action page
+    */
     
+    // debugger;
+    // new idea: maybe look at last 5 items with 'rips.247lib.com/stars' in history?
+    // TODO: do stuff with history
+    // var mObj2 = {
+    //     action: 'get_data_from_chrome_history'
+    // };
+    // chrome.runtime.sendMessage(mObj2, function(response) {
+    //     // do stuff with history data
+    //     debugger;
+    // });
+
+    // debugger;
+
+    // flag has been set, now next check if cached data is available.
+    var mObj = {
+        action: 'get_data_from_chrome_storage_local',
+        keysObj: {
+            CACHED_DATA: ''
+        }
+    };
+
+    // get cached data from chrome
+    chrome.runtime.sendMessage(mObj, function(response) {
+        var cachedDataObj = response['CACHED_DATA'];
+
+        // get url piece from cached data - indicates url where cached data was stored
+        var urlPiece = cachedDataObj.URL_PIECE;
+
+        if (cachedDataObj === '')
+            return;
+
+        // check if current url contains cached data url piece
+        // - if so, add html. if not, quit.
+        // TODO: here, also make sure error flag has been thrown / stored?
+        if ( urlHas(url, urlPiece) ) {
+            var recoverHTML = getRecoverHTML();
+
+            // add html to page
+            $('body').append(recoverHTML);
+
+            // show recovery panel w/ animation
+            $('#restore-ui').show(500);
+
+            // set up click events on recovery panel
+            $('#restore-ui-action').click(function( e_click ) {
+                mRecoverData( e_click, cachedDataObj ); 
+            });
+            $('#restore-ui-clear').click( mClearCachedData );
+        }
+    });
+}
+
+/**
+ * Function called by click of the restore-ui-action button. Gets processes CACHED_DATA,
+ * then displays the data on the page (if possible!)
+ * 
+ * @param {any} e_click click event handler
+ * @param {any} CACHED_DATA cached data from previous save
+ */
+function mRecoverData( e_click, CACHED_DATA ) {
+    // var $button = $(this);
+    var errMessage = '';
+
+    Object.keys(CACHED_DATA).forEach(function(key, index) {
+        $elemsFound = $('[name="' + key + '"][type!="hidden"]');
+
+        if ( $elemsFound.length > 1 || $elemsFound.length === 0 ) {
+            // if jQuery finds 0 or more than 1 matching element, log error and skip processing
+            errMessage += 'key (' + key + ') not handled appropriately on data recovery.';
+            return;
+        }
+
+        var value = CACHED_DATA[key];
+
+        // check if data is checkbox -> handled differently
+        if ( $elemsFound.attr('type') === 'checkbox' ) {
+
+            // if value is true, check checkbox
+            var checked = value === 'false' ? false : true;
+
+            if ( checked )
+                $elemsFound.prop('checked', true);
+
+        } else {
+            // put non-checkbox cached data back onto page
+            $($elemsFound).val( value );
+        }
+    });
+
+    if (errMessage !== '')
+        console.log(errMessage);
+
+    // Finally, delete from cached data
+    mClearCachedData('CALLED FROM mRecoverData');
+}
+
+/**
+ * Function clears cached data from chrome local storage, then hides restore-ui panel
+ * 
+ * @param {jQuery event} e_click jQuery click event from clicking clear button 
+ */
+function mClearCachedData( e_click ) {
+    // time to delete cached data!
+    var mObj = {
+        action: 'clear_data_from_chrome_storage_local',
+        dataObj: {
+            'CACHED_DATA': ''
+        }
+    };
+
+    // On callback, hide restore panel
+    chrome.runtime.sendMessage(mObj, function() {
+        $('#restore-ui').hide(500);
+    });
 }
 
 /**
@@ -174,6 +313,30 @@ function urlHas(url, text) {
 		return false;
 	else
 		return true;
+}
+
+/**
+ * Function builds and returns html for recovery status bar
+ * 
+ * @returns html in form of string
+ */
+function getRecoverHTML() {
+    var html = '<div id="restore-ui">'
+            + '<span id="restore-ui-content">'
+                + 'Found lost data'
+            + '</span>'
+            + '<button id="restore-ui-action">'
+                + 'Recover'
+            + '</button>'
+            + '<span id="restore-ui-separator">'
+                + '-'
+            + '</span>'
+            + '<button id="restore-ui-clear">'
+                + 'Clear'
+            + '</button>'
+        + '</div>';
+
+    return html;
 }
 
 /**

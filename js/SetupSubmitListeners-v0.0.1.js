@@ -46,6 +46,7 @@ function setupRipsSubmitListeners(url) {
 		// Added as a comment - someone suggested adding this, but may not actually be
 		// useful (can search partial #s for Phone #, and get results)
 		// also - this was being weird when trying to implement so i stopped :D
+		// TODO: maybe don't do any validation, just remove spaces / convert 0's?
 		// AdvancedSearch: {
 		// 	urlPiece: "SearchClientDetails/AdvancedSearch",
 		// 	submitConfig: {
@@ -57,13 +58,13 @@ function setupRipsSubmitListeners(url) {
 
 	// now check which page we're on, and set up those submit listeners:
 	if ( urlHas(url, ripsPages.Registration.urlPiece) )
-		handleSubmit(ripsPages.Registration.submitConfig);
+		handleSubmit(ripsPages.Registration);
 
 	else if ( urlHas(url, ripsPages.ClientBasicInformation.urlPiece) )
-			handleSubmit(ripsPages.ClientBasicInformation.submitConfig);
+			handleSubmit(ripsPages.ClientBasicInformation);
 
 	else if ( urlHas(url, ripsPages.AddAction.urlPiece) )
-			handleSubmit(ripsPages.AddAction.submitConfig);
+			handleSubmit(ripsPages.AddAction);
 
 	// else if ( urlHas(url, ripsPages.AddService.urlPiece) )
 	// 		handleSubmit(ripsPages.AddService.submitConfig);
@@ -87,12 +88,16 @@ function setupRipsSubmitListeners(url) {
  * repress submission, then (if checks pass) store data in $('form').data, retrigger
  * submission, then return true before repressing next submit
  * 
- * @param {object} config configuration obj detailing submission details
+ * @param {object} config configuration obj detailing page details
  * @returns true if submitNow flag set to 'true', otherwise prevents form submission
  */
 function handleSubmit(config) {
-	var validateFlag = config.doValidation;
-	var storeLocalFlag = config.storeLocal;
+	var submitConfig = config.submitConfig;
+
+	var validateFlag = submitConfig.doValidation;
+	var storeLocalFlag = submitConfig.storeLocal;
+
+	var urlPiece = config.urlPiece;
 
 	/* new idea:
 		1. get button click
@@ -103,6 +108,7 @@ function handleSubmit(config) {
 		6. on 2nd round, set data param & allow submit
 	*/
 	$('input[value="Save"]').one('click', function(e_click) {
+		debugger;
 		$thisButton = $(this);
 		$parentForm = $thisButton.closest('form');
 
@@ -123,7 +129,7 @@ function handleSubmit(config) {
 			p_container.push( doOfflineCheck() );
 
 			if (storeLocalFlag)
-				p_container.push( doStoreLocal($parentForm) );
+				p_container.push( doStoreLocal($parentForm, urlPiece) );
 
 			Promise.all(p_container)
 			.then(function(responses) {
@@ -174,7 +180,7 @@ function handleSubmit(config) {
 						dataObj: {
 							'CACHED_DATA': ''
 						},
-						noCallback: true
+						noCallback: true // this is needed to prevent some errors
 					};
 
 					// not sending a callback function b/c not necessary here
@@ -189,27 +195,57 @@ function handleSubmit(config) {
  * Function stores saved Form data into chrome local storage. Data can then
  * be recovered by restore button
  * 
+ * Note: overwrites data in 'CACHED_DATA' -> when form passes checks, this node is always
+ * overwritten, so don't need to check if data exists elsewhere
+ * 
  * @param {object} $form jQuery object with all form data
+ * @param {string} urlPiece piece of URL to help decide if recover html should show
  * @returns promise - resolves with error config
  */
-function doStoreLocal($form) {
+function doStoreLocal($form, urlPiece) {
 	return new Promise(function(resolve, reject) {
 		// skip certain values, for whatever reason:
 		var namesToSkip = [
 			'IsAttendanceNote' // 2 of them on "Add Action" page! one is true, one is false, default is true
 		];
 
-		// really, eventually we store / retrieve data from background.js
-		$formData = $form.serializeArray();
-		var dataObj = {'CACHED_DATA': {}};
+		// <QUICK HACK: START> to change names of all hidden fields.
+		// Purpose: many checkboxes have duplicate hidden checkboxes with the same name, so
+		// serializing the form overwrites the real element value w/ hidden (always false) value
+		var $hiddenFormElems = $form.find('[type="hidden"]');
+		var hiddenKey = '_meIsHidden12345';
+		
+		$hiddenFormElems.each( function(index, hiddenElem) {
+			// add unique key to end of value so we can find it later
+			hiddenElem.value = hiddenElem.value + hiddenKey;
+		});
 
+		// get serialized form from jQuery (with edited hidden elems)
+		$formData = $form.serializeArray();
+		var dataObj = {
+			CACHED_DATA: {
+				URL_PIECE: urlPiece
+			}
+		};
+
+		// 
 		for (let $elem of $formData) {
-			// if value isn't empty & we don't need to skip the elem name:
-			// TODO: deal with multiple elements w/ same name
-			// example: attendance notes has 2 elements w/ same name!
-			if ($elem.value !== '' && namesToSkip.indexOf($elem.name) === -1)
+			// if value isn't empty, or contains hidden value key,
+			// or if we don't need to skip the elem name:
+			if (
+					$elem.value !== '' &&
+					$elem.value.indexOf( hiddenKey ) === -1 &&
+					namesToSkip.indexOf( $elem.name ) === -1
+				) {
 				dataObj.CACHED_DATA[$elem.name] = $elem.value;
+			}
 		}
+
+		$hiddenFormElems.each( function(index, hiddenElem) {
+			// take unique key out of values, just in case RIPS needs it later
+			hiddenElem.value = hiddenElem.value.replace(hiddenKey, '');
+		});
+		// <QUICK HACK: END> - change names of all hidden fields back to original.
 
 		var mObj = {
 			action: 'store_data_to_chrome_storage_local',
@@ -217,6 +253,7 @@ function doStoreLocal($form) {
 		};
 
 		chrome.runtime.sendMessage(mObj, function(response) {
+			// resolved successfully, so return config object with pass = true
 			resolve({pass: true});
 		});
 	});
@@ -283,12 +320,12 @@ function doValidationCheck(validateFlag) {
 
 		// send data to background.js
 		chrome.runtime.sendMessage(mObj, function(response) {
-			var responseKey = mObj.key;
+			// var responseKey = mObj.key;
 			var err_config = {};
 
 			// successes should come back in the same order, so:
-			var valUNHCR = response[responseKey + '0'];
-			var valPhone = response[responseKey + '1'];
+			var valUNHCR = response['VALID_UNHCR'];
+			var valPhone = response['VALID_PHONE'];
 			// var valDates = response[2];
 			// var valAppt = response[3];
 

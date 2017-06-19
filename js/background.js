@@ -21,7 +21,8 @@ var config = {
  *               		dataObj: {
  *                          'key1': value1,
  *                          'key2': value2
- *                      }
+ *                      },
+ *                      noCallback: false
  *               	}
  * MessageSender    chrome object that holds information about message sender (ex: tab id)
  * sendResponse     callback function for message sender
@@ -42,6 +43,13 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
         // gets data from chrome's local storage and returns to caller via sendResponse
         case 'get_data_from_chrome_storage_local':
             getValuesFromChromeLocalStorage(mObj, sendResponse);
+            // async because uses promises
+            async = true;
+            break;
+
+        // gets data from chrome history
+        case 'get_data_from_chrome_history':
+            getChromeHistoryItems(mObj, sendResponse);
             // async because uses promises
             async = true;
             break;
@@ -84,7 +92,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 	for (key in changes) {
 		var storageChange = changes[key];
 		console.log('Storage key "%s" in namespace "%s" changed. ' +
-			'Old value was "%s", new value is "%s".',
+			'Old value was "%s", new value is: ',
 			key,
 			namespace,
 			storageChange.oldValue,
@@ -99,6 +107,16 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 
 /**
  * Function gets chrome local data and sends data back to caller
+ * 
+ * Expects mObj to look like this:
+ * {
+ *      action: '...',
+ *      keysObj: {
+ *          'key1', '',
+ *          'key2', '',
+ *          ...
+ *      }
+ * }
  * 
  * @param {object} mObj message object with key data
  * @param {function} responseCallback callback function where gathered data will be sent
@@ -119,6 +137,17 @@ function getValuesFromChromeLocalStorage(mObj, responseCallback) {
 
 }
 
+function getChromeHistoryItems(mObj, responseCallback) {
+    chrome.history.search({
+        'text': 'rips.247lib.com/stars/',
+        'maxResults': 20
+    }, function(results) {
+        console.log('history results:',results);
+
+        responseCallback(results);
+    });
+}
+
 /**
  * Function stores data to chrome local storage based off config object (mObj)
  * 
@@ -132,7 +161,7 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 
     // loop through keys in dataObj (turns obj into array of keys)
     // if dataObj is empty, loop will get skipped
-    Object.keys(dataObj).forEach( function(key, index) {
+    Object.keys( dataObj ).forEach( function(key, index) {
         // key: the name of the object key
         // index: the ordinal position of the key within the object
         var dataValue = dataObj[key]; 
@@ -144,6 +173,7 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 				VALID_APPT    - N/A
 
                 CACHED_DATA   - Stores saved data in case RIPS timed out
+                TIMEOUT_ERROR_FLAG  - flag that indicates if RIPS timed out recently
 		*/
 		switch (key) {
             // Recent update: all validation keys can just automatically store data, no need
@@ -163,6 +193,11 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 
             // store data directly to local storage
             case 'CACHED_DATA':
+                storePromises.push( saveValueToStorage(key, dataValue) );
+                break;
+            
+            // store data directly to local storage
+            case 'TIMEOUT_ERROR_FLAG':
                 storePromises.push( saveValueToStorage(key, dataValue) );
                 break;
 
@@ -211,6 +246,8 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * Function turns an array into a serializable object
  * Purpose = must send chrome messages as objects, not arrays
  * Note: if arr[i] is undefined, doesn't add to obj!
+ * Note2: if arr[i]['key'] is undefined or null, also doesn't add to obj!
+ * TODO: think if note2 is good or bad...
  * 
  * @param {array} arr array of objects to convert to single serializable object
  * @param {object} [obj={}] object to add keys to
@@ -232,7 +269,7 @@ function Serialize_ArrayToObj(arr, obj = {}, index = 0) {
         // get data object from array
         var dataObj = arr[i];
 
-        // check if dataObj is an empty object
+        // check if dataObj is an empty object. if so, skip
         if ( Object.keys( dataObj ).length < 1 )
             continue;
 
@@ -332,7 +369,7 @@ function getValFromStorage(key) {
  * @param {object} keysObj object full of keys
  * @returns Promise array with data from all keys
  */
-function getValuesFromStorage(keysObj) {
+function getValuesFromStorage( keysObj ) {
     var promises = [];
 
     Object.keys( keysObj ).forEach( function( key, index ) {
