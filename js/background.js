@@ -6,9 +6,9 @@
  */
 
 // Initialize firebase:
-var config = {
+// var config = {
     // get details from Firebase
-};
+// };
 // firebase.initializeApp(config);
 
 // ================================================================================================
@@ -134,7 +134,6 @@ function getValuesFromChromeLocalStorage(mObj, responseCallback) {
 
         responseCallback( obj );
     });
-
 }
 
 function getChromeHistoryItems(mObj, responseCallback) {
@@ -142,7 +141,7 @@ function getChromeHistoryItems(mObj, responseCallback) {
         'text': 'rips.247lib.com/stars/',
         'maxResults': 20
     }, function(results) {
-        console.log('history results:',results);
+        console.log('history results:', results);
 
         responseCallback(results);
     });

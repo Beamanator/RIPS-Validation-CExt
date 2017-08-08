@@ -181,7 +181,8 @@ function validateUNHCR(throwErrorFlag) {
     		msg = 'UNHCR numbers must match one of these formats:' +
     			'\\n###-YYC##### (new)' +
 	        	'\\n####/YYYY (old)' +
-	        	'\\n###-CS########' +
+				'\\n###-AP######## (new appointment slip)' +
+				'\\n###-CS######## (old appointment slip)' +
 	        	'\\nFor no UNHCR number, enter \\"None\\"';
     	}
 
@@ -256,9 +257,11 @@ function validateUNHCR(throwErrorFlag) {
         }
     }
 
-    // function checks if format is valid for case number (before getting card)
-    function checkValidCS(num) {
-    	var format = "^[0-9]{3}-CS[0-9]{8}$";
+	// function checks if format is valid for case number (before getting card)
+	// Aug 8: new appointment slip #s have 'AP', not 'CS' in them.
+    function checkValidApptSlip(num) {
+		var format1 = "^[0-9]{3}-CS[0-9]{8}$";
+		var format2 = "^[0-9]{3}-AP[0-9]{8}$"
 
     	// remove non-alphanumeric values from num
         num = removeNonAlphanumeric(num);
@@ -270,7 +273,7 @@ function validateUNHCR(throwErrorFlag) {
 	    num = num.substr(0, 3) + "-" + num.substr(3);
     	
     	// if entered data doesn't match format, return false.
-    	if (num.match(format) == null) {
+    	if (num.match(format1) == null && num.match(format2) == null) {
     		return false;
     	} else {
     		placeInputValue('UNHCR', num);
@@ -307,7 +310,7 @@ function validateUNHCR(throwErrorFlag) {
 
     // Logic for deciding which format to validate on
     if (
-    			checkValidCS(UNHCRID)  ||
+    			checkValidApptSlip(UNHCRID)  ||
     			checkValidNew(UNHCRID) ||
     			checkValidOld(UNHCRID) ||
     			checkValidNone(UNHCRID)
