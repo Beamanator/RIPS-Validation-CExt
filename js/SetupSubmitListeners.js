@@ -99,7 +99,7 @@ function handleSubmit(config) {
 
 	var urlPiece = config.urlPiece;
 
-	/* new idea:
+	/* idea for below logic:
 		1. get button click
 		2. get parent form's action
 		3. set submit listener
@@ -108,12 +108,10 @@ function handleSubmit(config) {
 		6. on 2nd round, set data param & allow submit
 	*/
 	$('input[value="Save"]').one('click', function(e_click) {
-		debugger;
 		$thisButton = $(this);
 		$parentForm = $thisButton.closest('form');
 
 		$parentForm.submit(function(e_submit) {
-			// debugger;
 			if ( $parentForm.data().submitNow === 'true' )
 				return true;
 			
@@ -123,6 +121,7 @@ function handleSubmit(config) {
 			// now do all of the promises checks :)
 			var p_container = [];
 
+			// TODO: remove validation promise
 			if (validateFlag)
 				p_container.push( doValidationCheck(validateFlag) );
 
@@ -163,7 +162,7 @@ function handleSubmit(config) {
 							message: config.message,
 							errMethods: ['mConsole', 'mSwal']
 						};
-						errAPI ? ThrowError(errConfig) : console.log(errConfig.message);
+						errAPI ? ThrowError(errConfig) : console.error(errConfig.message);
 						allPass = false;
 						break;
 					}
@@ -297,6 +296,7 @@ function doOfflineCheck() {
 
 /**
  * Function validaties fields are populated correctly upon submit
+ * // TODO: remove promise here
  * 
  * @param {boolean} validateFlag if false, skip validation
  * @returns Promise with validation results
@@ -309,48 +309,47 @@ function doValidationCheck(validateFlag) {
 			return;
 		}
 
-		// setup config obj for background.js
-		var mObj = {
-			action: "get_data_from_chrome_storage_local",
-			keysObj: {
-				'VALID_UNHCR': '',
-				'VALID_PHONE': ''
-			}
-		};
+		var err_config = {};
 
-		// send data to background.js
-		chrome.runtime.sendMessage(mObj, function(response) {
-			// var responseKey = mObj.key;
-			var err_config = {};
+		var valUNHCR = true;
+		var valPhone = true;
+		var valDates = true;
 
-			// successes should come back in the same order, so:
-			var valUNHCR = response['VALID_UNHCR'];
-			var valPhone = response['VALID_PHONE'];
-			// var valDates = response[2];
-			// var valAppt = response[3];
+		var fieldsValidFlag = true;
+		if ( fieldsValidFlag && valUNHCR !== false) {
+			let $elem = getUnhcrElem();
+			fieldsValidFlag = validateUNHCR($elem, false);
+			if (!fieldsValidFlag)
+				err_config['message'] = 'Check UNHCR number';
+		}
 
-			var fieldsValidFlag = true;
+		if ( fieldsValidFlag && valPhone !== false) {
+			let $elem = getPhoneElem();
+			fieldsValidFlag = validatePhoneNo($elem, false);
+			if (!fieldsValidFlag)
+				err_config['message'] = 'Check phone number';
+		}
 
-			// if vals are true, validate those fields.
-			// if vals are undefined, default is to do the same!
-			if ( fieldsValidFlag && valUNHCR !== false) {
-				fieldsValidFlag = validateUNHCR(false);
-				if (!fieldsValidFlag)
-					err_config['message'] = 'Check UNHCR number';
-			}
+		// TODO: maybe make error message more specific?
+		if ( fieldsValidFlag && valDates !== false) {
+			let $elems = getDateElems();
 
-			if ( fieldsValidFlag && valPhone !== false) {
-				fieldsValidFlag = validatePhoneNo(false);
-				if (!fieldsValidFlag)
-					err_config['message'] = 'Check phone number';
+			for (let i = 0; i < $elems.length; i++) {
+				if (fieldsValidFlag)
+					fieldsValidFlag = validateDate($elems[i], false);
+				else
+					break;
 			}
 
-			// if fields valid, pass validation. and vice verca
-			err_config['pass'] = fieldsValidFlag;
-			err_config['title'] = 'Error: Invalid field format';
-			
-			resolve(err_config);
-		});
+			if (!fieldsValidFlag)
+				err_config['message'] = 'Check dates';
+		}
+
+		// if fields valid, pass validation. and vice verca
+		err_config['pass'] = fieldsValidFlag;
+		err_config['title'] = 'Error: Invalid field format';
+		
+		resolve(err_config);
 	});
 }
 

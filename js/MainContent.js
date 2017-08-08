@@ -5,34 +5,18 @@ $(document).ready(function(){
 });
 
 // Loads validation settings from local storage
+/**
+ * Function triggers setting up all validation blur functions.
+ * 
+ * 'true' is needed for each to throw swal errors. When validation is envoked
+ * from SetupSubmitListeners, validation is called with 'false' to prevent each
+ * swal error from triggering
+ * 
+ */
 function loadValidation() {
-	// setup config obj for background.js
-	var mObj = {
-		action: "get_data_from_chrome_storage_local",
-		keysObj: {
-			'VALID_UNHCR': '',
-			'VALID_PHONE': '',
-			'VALID_DATES': '',
-			'VALID_APPT': ''
-		}
-	};
-
-	chrome.runtime.sendMessage(mObj, function(response) {
-		// successes should come back in the same order, so:
-		var valUNHCR = response['VALID_UNHCR'];
-		var valPhone = response['VALID_PHONE'];
-		// var valDates = response['VALID_DATES'];
-		// var valAppt = response['VALID_APPT'];
-
-		// if vals are true, set validation to true.
-		// if vals are undefined, default is to set validation to true too!
-		if ( valUNHCR === true || valUNHCR === undefined )
-			setValidateUNHCR( true );
-		if ( valPhone === true || valPhone === undefined )
-			setValidatePhoneNo( true );
-		// if (valDates === true) { changeValidateDates(true); }
-		// if (valAppt === true)  { changeValidateAppointmentNo(true); }
-	});
+	setValidateUNHCR( true );
+	setValidatePhoneNo( true );
+	setValidateDates( true );
 }
 
 /**
@@ -62,8 +46,27 @@ function loadViewManipulator() {
 	Manipulate(pageURL, username);
 }
 
+
+/**
+ * Functions return HTML input element IDs 
+ */
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
+function getDateElemIDs() { return ['LDATEOFBIRTH']; }
+
+/**
+ * Functions return jQuery elements, based off above element IDs
+ */
+function getUnhcrElem() { return $('#'+getUnhcrElemID() ); }
+function getPhoneElem() { return $('#'+getPhoneElemID() ); }
+function getDateElems() {
+	let dateElemIDs = getDateElemIDs(),
+		dateElems = [];
+	for (let i = 0; i < dateElemIDs.length; i++) {
+		dateElems.push( $('#'+dateElemIDs[i]) );
+	}
+	return dateElems;
+}
 
 // ========================================================================
 //                       CHANGE -> VALIDATION FUNCTIONS
@@ -81,15 +84,11 @@ function setValidatePhoneNo(on) {
 	// When phone number is changed and focus leaves, calls validation function
     
     if (on) {
-    	updateStorageLocal({'VALID_PHONE': true}, function(response) {
-			$("#" + getPhoneElemID() ).blur(function () {
-		        validatePhoneNo(true);
-		    });
+    	getPhoneElem().blur(function (e) {
+			validatePhoneNo( $(this), true );
 		});
 	} else {
-		updateStorageLocal({'VALID_PHONE': false}, function(response) {
-			$("#" + getPhoneElemID() ).unbind("blur");
-		});
+		getPhoneElem().unbind("blur");
 	}
 }
 
@@ -105,15 +104,44 @@ function setValidateUNHCR(on) {
     // When UNHCR number is changed and focus leaves, call validation function
     
     if (on) {
-    	updateStorageLocal({'VALID_UNHCR': true}, function(response) {
-			$("#UNHCRIdentifier").blur(function () {
-		        validateUNHCR(true);
-		    });
+		getUnhcrElem().blur(function (e) {
+			validateUNHCR( $(this), true );
 		});
 	} else {
-		updateStorageLocal({'VALID_UNHCR': false}, function(response) {
-			$("#UNHCRIdentifier").unbind("blur");
-		});
+		getUnhcrElem().unbind("blur");
+	}
+}
+
+// TODO: combine down setValidate<blah> functions
+/**
+ * Function adds / removes Date number validation to the following pages:
+ * Registration
+ * Client Basic Information
+ * 
+ * @param {any} on 
+ */
+function setValidateDates(on) {
+	// Add jQuery 'blur' function to UNHCR text box.
+    // When UNHCR number is changed and focus leaves, call validation function
+
+	let dateElems = getDateElems();
+
+	if (on) {
+		// set blur function on all date elements
+		for (let i = 0; i < dateElems.length; i++) {
+			dateElems[i].blur(function (e) {
+				// set pause so date can be stored in input element
+				// by jQuery, then validated using $this.val()
+				setTimeout(function($this) {
+					validateDate( $this, true );
+				}, 500, $(this))
+		    });
+		}
+	} else {
+		// remove blur function on all date elements
+		for (let i = 0; i < dateElems.length; i++) {
+			dateElems[i].unbind("blur");
+		}
 	}
 }
 
@@ -165,10 +193,11 @@ chrome.runtime.onMessage.addListener( function(request, MessageSender, sendRespo
  *		valid 'Pre-card' format: ###-CS########
  *		valid 'Unknown' / 'None' format: 'None'
  * 
+ * @param {object} $elem - jQuery element that needs validation
  * @param {boolean} throwErrorFlag if true, errors is thrown. If false, is not thrown
  * @returns boolean for valid fields (true = valid, false = invalid) 
  */
-function validateUNHCR(throwErrorFlag) {
+function validateUNHCR($elem, throwErrorFlag) {
 
     // can use '\\n' to enter text on a new line if needed
     function throwUnhcrError(message, fatal) {
@@ -297,7 +326,7 @@ function validateUNHCR(throwErrorFlag) {
     }
 
     // get UNHCR number from input box
-    var UNHCRID = "" + $('#' + getUnhcrElemID() ).val();
+    var UNHCRID = "" + $elem.val();
 
     // quit if number is empty
     if (!UNHCRID) return;
@@ -337,10 +366,11 @@ function validateUNHCR(throwErrorFlag) {
  * 		Turns 'O' into 0's
  * 		Removes all other characters that aren't numbers
  * 
+ * @param {object} $elem - jQuery element that needs validation check
  * @param {boolean} throwErrorFlag if true, errors is thrown. If false, is not thrown
  * @returns boolean for valid field (true = valid, false = invalid) 
  */
-function validatePhoneNo(throwErrorFlag) {
+function validatePhoneNo($elem, throwErrorFlag) {
 	function formatNum(num) {
 		// use a regexp to replace 'I' or 'L' with '1'
 		// num = num.replace(/[IL]/g,'1');
@@ -358,10 +388,13 @@ function validatePhoneNo(throwErrorFlag) {
     function throwPhoneNoError(message, fatal) {
     	var title;
 
+		if (!message)
+			message = 'Please fix phone number format and try again';
+
     	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
-		// or no message, or throwErrorFlag is falss -> quit
-    	if (!ThrowError || !message || !throwErrorFlag) {
-			console.log('Phone # Error: ', message);
+		// or no message, or throwErrorFlag is false -> quit
+    	if (!ThrowError || !throwErrorFlag) {
+			console.error('Phone # Error: ', message);
 			return;
 		}
 
@@ -380,7 +413,7 @@ function validatePhoneNo(throwErrorFlag) {
     }
 
 	// get phone number from input box
-	var num = $('#' + getPhoneElemID() ).val();
+	var num = $elem.val();
 
 	// format user-entered number (after converting to upper-case)
 	var num = formatNum( num.toUpperCase() );
@@ -419,17 +452,79 @@ Validates if a given date is in correct format
 	Validation format: DD/MM/YYYY
 		00 <= DD <= 31
 		00 <= MM <= 12
-		1000 <= YYYY <= 2030
+		1900 <= YYYY <= 2100
 */
-function validateDate(element) {
-	// debugger;
+function validateDate($elem, throwErrorFlag) {
+	// can use '\\n' to enter text on a new line if needed
+    function throwDateError(message) {
+    	var title = 'Invalid Date Entered';
+
+		if (!message)
+			message = 'Please fix date format and try again. Format should be:' +
+				' DD/MM/YYYY';
+
+    	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
+		// or no message, or throwErrorFlag is false -> throw console
+		// error and quit
+    	if (!ThrowError || !throwErrorFlag) {
+			console.error('Date Format Error: ', message);
+			return;
+		}
+
+    	ThrowError({
+    		title: title,
+    		message: message,
+        	errMethods: ['mConsole', 'mSwal']
+    	});
+    }
+
+	var date = $elem.val();
+	
+	// date SHOULD be in format DD/MM/YYYY
+	let dateArr = date.split('/');
+
+	if (dateArr.length !== 3) {
+		throwDateError('Date entered needs 3 groups of numbers (day, month, year)');
+		return false;
+	}
+
+	let d = parseInt( dateArr[0] );
+	let m = parseInt( dateArr[1] );
+	let y = parseInt( dateArr[2] );
+
+	// error if parsing went poorly
+	if (d === NaN || m === NaN || y === NaN) {
+		throwDateError('Date entered seems to include invalid characters');
+		return false;
+	}
+	
+	// error if day is out of range
+	else if (d < 1 || d > 31) {
+		throwDateError('Day entered (' + d + ') is out of range (1 - 31)');
+		return false;
+	}
+
+	// error if months is out of range
+	else if (m < 0 || m > 12) {
+		throwDateError('Month entered (' + m + ') is out of range (1 - 12)');
+		return false;
+	}
+
+	// error if year is out of range
+	else if (y < 1900 || y > 2100) {
+		throwDateError('Year entered (' + y + ') is out of range (1900 - 2100)');
+		return false;
+	}
+
+	// all numbers are valid, so return true.
+	return true;
 }
 
 // ========================================================================
 //                             OTHER FUNCTIONS
 // ========================================================================
 
- // places value into specified field
+// places value into specified field
 // @param:
 // 	field: fields supported: 'UNHCR', 'PHONE'
 function placeInputValue(field, val) {
@@ -501,21 +596,7 @@ function updateStorageLocal(dataObj, callback) {
 // Removed because:
 //  difficult to add event listeners in the right spot. Maybe can just add blur, but
 //  users may experience extra warnings. This may be okay, but I tried to avoid :(
-
-// function dateFocusIn() {
-// 	debugger;
-// 	$(this).data('valB4', $(this).val());
-// 	console.log('focus in date', $(this).data('valB4'));
-// }
-
-// function dateChange() {
-// 	console.log('date changed');
-// 	console.log('before',$(this).data('valB4'));
-// 	console.log('now', $(this).val());
-// 	// debugger;
-// 	// $(this).data('valB4');
-// 	// validateDate( $(this) );
-// }
+// Trying again Aug 8 2017 :)
 
 /*
 	add date format validation to all Date textboxes:

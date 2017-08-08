@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "0.1.5",
+	"version": "0.1.6",
 
 	"description": "RIPS Extension - Adds validation on UNHCR # and Phone #",
 
@@ -14,8 +14,8 @@
 	"browser_action": {
 		"default_icon": {
 			"32": "img/icon32.ico" // unpacked exts need .png :)
-		},
-		"default_popup": "html/popup.html"
+		}//,
+		// "default_popup": "html/popup.html"
 	},
 	"icons": {
 		"48": "img/icon48.png",
@@ -35,7 +35,7 @@
 
 				"js/jquery-3.1.1.min.js",
 				"js/ErrorThrowingAPI.js",
-				"js/SetupSubmitListeners-v0.0.1.js",
+				"js/SetupSubmitListeners.js",
 				"js/ViewManipulator.js",
 
 				"js/MainContent.js"
