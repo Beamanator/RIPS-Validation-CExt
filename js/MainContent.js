@@ -61,11 +61,21 @@ function getUnhcrElem() { return $('#'+getUnhcrElemID() ); }
 function getPhoneElem() { return $('#'+getPhoneElemID() ); }
 function getDateElems() {
 	let dateElemIDs = getDateElemIDs(),
-		dateElems = [];
+		$dateElems = [];
 	for (let i = 0; i < dateElemIDs.length; i++) {
-		dateElems.push( $('#'+dateElemIDs[i]) );
+		let $dateElem = $('#'+dateElemIDs[i]);
+
+		// throw error if couldn't find element
+		if ($dateElem.length === 0) {
+			console.error('couldnt find date element with id: <' + dateElemIDs[i]
+				+ '>');
+		}
+		
+		// else, put element in array to return
+		else
+			$dateElems.push( $dateElem );
 	}
-	return dateElems;
+	return $dateElems;
 }
 
 // ========================================================================
@@ -484,7 +494,8 @@ function validateDate($elem, throwErrorFlag) {
 	let dateArr = date.split('/');
 
 	if (dateArr.length !== 3) {
-		throwDateError('Date entered needs 3 groups of numbers (day, month, year)');
+		throwDateError('Date entered needs 3 groups of numbers (day, month, year)' +
+			' - separated by "/"');
 		return false;
 	}
 

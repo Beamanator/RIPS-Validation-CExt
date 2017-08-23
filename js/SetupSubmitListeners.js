@@ -320,14 +320,14 @@ function doValidationCheck(validateFlag) {
 			let $elem = getUnhcrElem();
 			fieldsValidFlag = validateUNHCR($elem, false);
 			if (!fieldsValidFlag)
-				err_config['message'] = 'Check UNHCR number';
+				err_config['message'] = 'Check UNHCR number format';
 		}
 
 		if ( fieldsValidFlag && valPhone !== false) {
 			let $elem = getPhoneElem();
 			fieldsValidFlag = validatePhoneNo($elem, false);
 			if (!fieldsValidFlag)
-				err_config['message'] = 'Check phone number';
+				err_config['message'] = 'Check phone number format';
 		}
 
 		// TODO: maybe make error message more specific?
@@ -342,7 +342,7 @@ function doValidationCheck(validateFlag) {
 			}
 
 			if (!fieldsValidFlag)
-				err_config['message'] = 'Check dates';
+				err_config['message'] = 'Check date format(s)';
 		}
 
 		// if fields valid, pass validation. and vice verca
