@@ -249,6 +249,7 @@ function mCleanNoteText() {
  * @returns success of manipulation (true = successful, false = unsuccessful)
  */
 function mHideDeleteButton(username, exceptions) {
+    debugger;
     // lowercase username to match exceptions format:
     username = username.toLowerCase();
 
@@ -257,14 +258,25 @@ function mHideDeleteButton(username, exceptions) {
         return true;
 
     // now real logic for hiding the button:
-    var $del = $('input[value="Delete"]');
+    // [added button b/c recently was changed to button html element]
+    var $del1 = $('input[value="Delete"]'),
+        $del2 = $('button[value="Delete"]');
 
-    if ( $del.length !== 1 )
+    // quit if no delete button was found.
+    if ( $del1.length !== 1 && $del2.length !== 1 ) {
+        console.warn('Warning: Did not hide Delete button b/c not found in html!');
         return false;
+    }
 
     // hide (lots of ways to do this)
-    // $del.css('display', 'none');
-    $del.hide();
+    // ex: $del.css('display', 'none');
+    if ($del1.length === 1) {
+        $del1.hide();
+    }
+
+    else if ($del2.length === 1) {
+        $del2.hide();
+    }
 
     return true;
 }
