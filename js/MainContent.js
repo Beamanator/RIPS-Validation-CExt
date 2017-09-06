@@ -1,17 +1,19 @@
 $(document).ready(function(){
+	let pageURL = $(location).attr('href');
+
 	loadValidation();
-	loadSubmitListeners();
-	loadViewManipulator();
+	loadSubmitListeners(pageURL);
+	loadViewManipulator(pageURL);
+
+	handleUserLogin(pageURL);
 });
 
-// Loads validation settings from local storage
 /**
  * Function triggers setting up all validation blur functions.
  * 
  * 'true' is needed for each to throw swal errors. When validation is envoked
  * from SetupSubmitListeners, validation is called with 'false' to prevent each
  * swal error from triggering
- * 
  */
 function loadValidation() {
 	setValidateUNHCR( true );
@@ -25,27 +27,52 @@ function loadValidation() {
  * Purpose = cancel "submit" event if internet is disconnected or validation failed
  * so that data doesn't get lost upon page refresh 
  * 
+ * @param {string} pageURL - url of current page
  */
-function loadSubmitListeners() {
-	// get current page URL
-	var pageURL = $(location).attr('href');
-
+function loadSubmitListeners(pageURL) {
+	// call submit listener api
 	SetupSubmitListeners(pageURL);
 }
 
 /**
  * Function is responsible for changing the view for different purposes
+ * examples: hiding elements, changing html data, adding html elements
  * 
- * examples: hiding elements, changing html data, adding html elements 
- * 
+ * @param {string} pageURL - url of current page
  */
-function loadViewManipulator() {
-	var pageURL = $(location).attr('href');
-	var username = $('a.username[title="Manage"]').text();
+function loadViewManipulator(pageURL) {
+	var username = getUsernameElem().text();
 
 	Manipulate(pageURL, username);
 }
 
+/**
+ * Function triggers background.js to handle user login data storage / tracking
+ * 
+ * @param {string} pageURL - url of current page
+ */
+function handleUserLogin(pageURL) {
+	var username = getUsernameElem().text();
+
+	// if page is 'recently accessed clients', handle login in background.js
+	if ( pageURL.includes('RecentlyAccessedClients') ) {
+		// set up message config object
+		var mObj = {
+			action: 'firebase_handle_user_login',
+			username: username,
+
+			// no callback function needed
+			noCallback: true
+		};
+
+		// send message config to background.js
+		chrome.runtime.sendMessage(mObj);
+	}
+
+	else {
+		// do nothing since we should have already counded this user
+	}
+}
 
 /**
  * Functions return HTML input element IDs 
@@ -53,6 +80,11 @@ function loadViewManipulator() {
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
 function getDateElemIDs() { return ['LDATEOFBIRTH']; }
+
+/**
+ * Function returns jQuery html element
+ */
+function getUsernameElem() { return $('a.username[title="Manage"]'); }
 
 /**
  * Functions return jQuery elements, based off above element IDs
@@ -67,7 +99,7 @@ function getDateElems() {
 
 		// throw error if couldn't find element
 		if ($dateElem.length === 0) {
-			console.error('couldnt find date element with id: <' + dateElemIDs[i]
+			console.warn('couldnt find date element with id: <' + dateElemIDs[i]
 				+ '>');
 		}
 		
@@ -602,72 +634,3 @@ function updateStorageLocal(dataObj, callback) {
 	// send message config to background.js
 	chrome.runtime.sendMessage(mObj, callback);
 }
-
-// ======================= DATE VALIDATION ========================
-// Removed because:
-//  difficult to add event listeners in the right spot. Maybe can just add blur, but
-//  users may experience extra warnings. This may be okay, but I tried to avoid :(
-// Trying again Aug 8 2017 :)
-
-/*
-	add date format validation to all Date textboxes:
-		Date of UNHCR Registration 
-		Date of Birth
-		Date of Arrival in Egypt
-		RSD Date
-*/
-// function changeValidateDates(on) {
-	// console.log('validation',on);
-
-	// Add jQuery 'blur' function to Date text boxes.
-    // Purpose: When user enters a date, this function will make sure the format
-    //  is acceptable. If not, a swal error will be thrown.
-    
-  //   if (on) {
-  //   	updateStorageLocal({'VALID_DATES': true})
-		// .then(function(results) {
-			// debugger;
-			// Date of Birth:
-			// $("input#LDATEOFBIRTH").on('focusin', dateFocusIn);
-			// $("div#ui-datepicker-div").on('click', dateBoxClick);
-			// $("table.ui-datepicker-calendar").on('click', dateBoxClick);
-			
-			// $("div#ui-datepicker-div tbody").on('click', dateBoxClick);
-			// $("input#LDATEOFBIRTH").on('input propertychange paste', dateChange);
-			// $("#ui-datepicker-div").datepicker({
-			// 	onSelect: dateSelect
-			// });
-
-			// Date Entered Country:
-			// $("input#CDDateEntryCountryLabel").on('focusin', dateFocusIn);
-			// $("input#CDDateEntryCountryLabel").on('change', dateChange);
-
-			// // Registration Date:
-			// $("input#CDDateRegisteredLabel").on('focusin', dateFocusIn);
-			// $("input#CDDateRegisteredLabel").on('change', dateChange);
-
-			// // RSD Date:
-			// $("input#LRSDDATE").on('focusin', dateFocusIn);
-			// $("input#LRSDDATE").on('change', dateChange);
-	// 	});
-	// } else {
-	// 	updateStorageLocal({'VALID_DATES': false})
-	// 	.then(function(results) {
-			// Date of Birth:
-			// $("input#LDATEOFBIRTH").off('focusin', dateFocusIn);
-			// $("input#LDATEOFBIRTH").off('change', dateChange);
-
-			// Date Entered Country:
-			// $("input#CDDateEntryCountryLabel").off('focusin', dateFocusIn);
-			// $("input#CDDateEntryCountryLabel").off('change', dateChange);
-
-			// // Registration Date:
-			// $("input#CDDateRegisteredLabel").off('focusin', dateFocusIn);
-			// $("input#CDDateRegisteredLabel").off('change', dateChange);
-
-			// // RSD Date:
-			// $("input#LRSDDATE").off('focusin', dateFocusIn);
-			// $("input#LRSDDATE").off('change', dateChange);
-// 		});
-// 	}
-// }
