@@ -3,7 +3,7 @@
 	"name": "RIPS Extension - Validation",
 	"version": "0.1.7",
 
-	"description": "RIPS Extension - Adds validation on UNHCR # and Phone #",
+	"description": "RIPS Extension - Adds validation on UNHCR #, Phone #, and DOB",
 
 	"permissions": [
 		// "identity",
