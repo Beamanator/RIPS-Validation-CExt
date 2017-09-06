@@ -249,7 +249,6 @@ function mCleanNoteText() {
  * @returns success of manipulation (true = successful, false = unsuccessful)
  */
 function mHideDeleteButton(username, exceptions) {
-    debugger;
     // lowercase username to match exceptions format:
     username = username.toLowerCase();
 
