@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "0.1.6",
+	"version": "0.1.7",
 
 	"description": "RIPS Extension - Adds validation on UNHCR # and Phone #",
 
@@ -46,8 +46,8 @@
 	],
 	"background": {
 		"page": "html/background.html"
-	}
-	// "content_security_policy":"script-src 'self' 'unsafe-eval' https://www.gstatic.com/ https://*.firebaseio.com https://www.googleapis.com; object-src 'self'"
+	},
+	"content_security_policy":"script-src 'self' 'unsafe-eval' https://www.gstatic.com/ https://*.firebaseio.com https://www.googleapis.com; object-src 'self'"
 	/*
 		TODO: add these properties:
 
