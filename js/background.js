@@ -257,13 +257,17 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  */
 function FB_handleUserLogin(fb, mObj) {
     let username = mObj.username,
-        date = (new Date());
+        dateToday = (new Date());
+
+    // if username is undefined [somehow], set username to 'unknown']
+    if (!username)
+        username = 'unknown';
 
     // get user holder -> user object from firebase
     var userHolderPromise = fb.database()
         .ref('/user_holder/' + username)
         .once('value');
-
+I 
     userHolderPromise.then( function(snapshot) {
         let userData = snapshot.val(),
             newLoginDate,
@@ -274,7 +278,7 @@ function FB_handleUserLogin(fb, mObj) {
         if ( !userData || typeof(userData) !== 'object' || 
                 Object.keys(userData).length === 0 ) {
             newLoginCount = 1;
-            newLoginDate = date.toDateString();
+            newLoginDate = dateToday.toDateString();
         }
         
         // else, evaluate old data to determind if data should be updated or
@@ -293,26 +297,26 @@ function FB_handleUserLogin(fb, mObj) {
             if (oldLoginDate.toDateString() !== 'Invalid Date') {
                 // check if old date is before current date
                 if ( oldLoginDate.setHours(0,0,0,0) <
-                        date.setHours(0,0,0,0) ) {
-                    newLoginDate = date.toDateString();
+                        dateToday.setHours(0,0,0,0) ) {
+                    newLoginDate = dateToday.toDateString();
                     newLoginCount++;
                 }
 
                 // check if old date is same as current date
                 else if ( oldLoginDate.setHours(0,0,0,0) ===
-                        date.setHours(0,0,0,0) ) {
+                        dateToday.setHours(0,0,0,0) ) {
                     // nothing to update so quit.
                     return;
                 }
 
                 // else, old date is after current date
                 else {
-                    newLoginDate = date.toDateString();
+                    newLoginDate = dateToday.toDateString();
                     // no counter increment since date was messed up
                 }
             } else {
                 // invalid date, so set as new login date
-                newLoginDate = date.toDateString();
+                newLoginDate = dateToday.toDateString();
             }
         }
 
