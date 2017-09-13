@@ -464,10 +464,19 @@ function validatePhoneNo($elem, throwErrorFlag) {
 	placeInputValue('PHONE', num);
 
 	// quit if num is empty
-	if (!num) return;
+	if ( !num ) return;
 
 	if ( num.length === 10 ) {
-		// add leading 0, then show warning error
+		// if leading number is a 0, then throw error and don't add leading 0
+		// because phone #s can't be '00...'
+		if ( num[0] === '0' ) {
+			throwPhoneNoError('Please fix phone number. The current phone number ' +
+				'is only 10 numbers beginning with 0, which is invalid.', 1);
+
+			return false;
+		}
+
+		// else add leading 0, then show warning
 		num = '0' + num;
 
 		// throw new number back into input box for user to see
@@ -477,12 +486,25 @@ function validatePhoneNo($elem, throwErrorFlag) {
 		throwPhoneNoError('Added leading 0 to phone number');
 
 		return true;
-	} else if ( num.length === 11) {
-		// do nothing since '-' is removed already
+	}
+	
+	// if phone number is 11 characters, good. Now check more specific details
+	else if ( num.length === 11 ) {
+		// first character must be a '0'
+		if ( num[0] !== '0' ) {
+			throwPhoneNoError('The first digit of phone number in Egypt ' +
+				'must be a "0". Please fix phone number.', 1);
+
+			return false;
+		}
+
+		// do nothing since other conditions passed
 		return true;
-	} else {
-		// throw fatal error
-		throwPhoneNoError('Preferred Phone # must be 11 numbers\\n\\n' +
+	}
+	
+	// if phone number is < 10 or > 11 characters, can't fix here. throw error.
+	else {
+		throwPhoneNoError('Preferred Phone # must be 11 numbers.\\n\\n' +
 			'Extra #s should go in "Other phone" field', 1);
 
         return false;
