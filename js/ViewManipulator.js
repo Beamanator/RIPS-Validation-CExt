@@ -60,6 +60,12 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
 
+/**
+ * Function automatically selects a caseworker - IF the logged in user
+ * has a caseworker account in a dropdown list.
+ * 
+ * @param {string} username - logged in username
+ */
 function mAutoSelectCW( username ) {
     // get html caseworker elements
     let caseworkerArr = $('select#CASEWORKERID option'),
