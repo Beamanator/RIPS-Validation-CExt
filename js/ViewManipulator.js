@@ -23,7 +23,7 @@ function Manipulate(url, username) {
     }
 
     // Client Basic Information Page
-    if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
+    else if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
         mHideDeleteButton(username,
             userExceptionHolder.hideDeleteButton);
         mEnableDataRecovery(url);
@@ -37,12 +37,21 @@ function Manipulate(url, username) {
             userExceptionHolder.hideEmptyServiceBoxes);
     }
 
+    // Add Service Page (Note: not view services)
+    else if ( urlHas(url, 'MatterAction/CreateNewServices') ) {
+        mAutoSelectCW( username );
+    }
+
     // History Page
     else if ( urlHas(url, 'MatterAction/ActionHistoryList') ) {
         mCleanNoteText();
     }
 
-    // TODO: Add Add Action Page [mEnableDataRecovery]
+    // Add Action Page
+    // Old plan: add 'mEnableDataRecovery'
+    else if ( urlHas(url, 'MatterAction/CreateNewAction') ) {
+        mAutoSelectCW( username );
+    }
 }
 
 function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of elem inside table displaying selected service information
@@ -50,6 +59,27 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 // ========================================================================
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
+
+function mAutoSelectCW( username ) {
+    // get html caseworker elements
+    let caseworkerArr = $('select#CASEWORKERID option'),
+        id = undefined;
+
+    // loop through caseworkers, looking for 'username' caseworker
+    for (let i = 0; i < caseworkerArr.length; i++) {
+        let elem = caseworkerArr[i];
+
+        let name = elem.innerHTML.trim();
+
+        if (name.toLowerCase() === username.toLowerCase()) {
+            id = elem.value;
+        }
+    }
+    
+    // if names matched, id should be defined, so select this cw!
+    if (id)
+        $('select#CASEWORKERID').val(id);
+}
 
 /**
  * FIXME: remove initial 'return' statement to actually enable data recovery
