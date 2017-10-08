@@ -330,7 +330,6 @@ function validateUNHCR($elem, throwErrorFlag) {
 
 	// function checks if format is valid for case number (before getting card)
 	// 8 Aug 2017: new appointment slip #s have 'AP', not 'CS' in them.
-	// TODO: 15 Sep 2017: possible that slips now don't need '^[0-9]{3}-' now?
     function checkValidApptSlip(num) {
 		var format1 = "^[0-9]{3}-CS[0-9]{8}$";
 		var format2 = "^[0-9]{3}-AP[0-9]{8}$"
