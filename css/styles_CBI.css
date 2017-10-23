@@ -1,0 +1,13 @@
+/* This css page ONLY applies to Client Basic Information (CBI) Page */
+
+/* STRATEGY: Remove inputs / buttons by DEFAULT */
+form > fieldset > input[value="Save"]
+{  display: none;  }
+form > fieldset > input[value="Delete"]
+{  display: none;  }
+form > fieldset > button[value="Delete"]
+{  display: none;  }
+
+/* replacement fields should have new class to differentiate */
+form > fieldset > input.newField
+{  display: inline;  }
