@@ -2,7 +2,6 @@ $(document).ready(function(){
 	let pageURL = $(location).attr('href');
 
 	loadValidation();
-	// loadSubmitListeners(pageURL);
 	loadViewManipulator(pageURL);
 
 	handleUserLogin(pageURL);
@@ -20,19 +19,6 @@ function loadValidation() {
 	setValidatePhoneNo( true );
 	setValidateDates( true );
 }
-
-/**
- * Function loads / sets listeners on "submit" buttons, depending on the page URL
- * 
- * Purpose = cancel "submit" event if internet is disconnected or validation failed
- * so that data doesn't get lost upon page refresh 
- * 
- * @param {string} pageURL - url of current page
- */
-// function loadSubmitListeners(pageURL) {
-// 	// call submit listener api
-// 	SetupSubmitListeners(pageURL);
-// }
 
 /**
  * Function is responsible for changing the view for different purposes

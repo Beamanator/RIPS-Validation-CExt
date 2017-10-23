@@ -96,15 +96,7 @@ function mAutoSelectCW( username ) {
  * @param {string} url - url of current page
  */
 function mCreateSaveButton(url) {
-    /**
-     * plan:
-     * 1) get original save button (jQuery)
-     * 2) create new save button
-     * 3) place new button right after old one (still in header)
-     * 4) create submit listener, or direct function call in SSL.js
-     * 5) Add ajax requests from old code, in SetupSubmitListeners
-     */
-    // 1 -> Get old save button
+    // 1 -> Get old save button (hidden via css, I think)
     let $oldSave = $('input[value="Save"]');
 
     // 2 -> create new save button

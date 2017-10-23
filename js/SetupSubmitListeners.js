@@ -1,15 +1,5 @@
-// main function to set up listeners depending on the URL passed in
-// @assumptions:
-// 1) jquery is available
-// function SetupSubmitListeners(pageURL) {
-	
-// 	// check contents of URL to decide which submit listeners to set up.
-// 	if ( urlHas(pageURL, 'rips.247lib.com') )
-// 		setupRipsSubmitListeners(pageURL);
-// }
-
 // ========================================================================
-//                  SETUP -> SUBMIT LISTENER FUNCTIONS
+//                         SETUP -> MAIN FUNCTION
 // ========================================================================
 
 function SetupRipsSubmitListener(url, elementSelector) {
@@ -31,15 +21,15 @@ function SetupRipsSubmitListener(url, elementSelector) {
 		}
 	};
 
-	// now check which page we're on, and set up those submit listeners:
+	// now check which page we're on, and handle submission setup:
 	if ( urlHas(url, ripsPages.Registration.urlPiece) )
 		handleSubmit(ripsPages.Registration);
 
 	else if ( urlHas(url, ripsPages.ClientBasicInformation.urlPiece) )
 			handleSubmit(ripsPages.ClientBasicInformation);
 
-	else
-		console.warn('No submit listeners to set up on page');
+	// else
+	// 	console.warn('No submit listeners to set up on page');
 }
 
 // ========================================================================
@@ -47,58 +37,42 @@ function SetupRipsSubmitListener(url, elementSelector) {
 // ========================================================================
 
 /**
- * Handles form submit events via params and online state
- * Ex: if offline or data invalid, form submit is prevented
+ * Handles 'Save' events by setting up click listeners and does the following:
  * 
- * Note: to enable form submit repression after async functions, we automatically
- * repress submission, then (if checks pass) store data in $('form').data, retrigger
- * submission, then return true before repressing next submit
+ * 1) Sets up click event for selector (in config)
+ * 2) Checks data on page is valid
+ * 3) Checks online status
+ * 
+ * If all pass, THEN call RIPS code to check extra validation / make sure
+ * required felds are populated.
+ * 
+ * After all of this, if data is valid (therefore no errors), trigger form submit
  * 
  * @param {object} config configuration obj detailing page details
- * @returns true if submitNow flag set to 'true', otherwise prevents form submission
  */
 function handleSubmit(config) {
 	if (!config || !config.submitConfig) return;
 
+	// get variables from config object
 	var submitConfig = config.submitConfig,
 		urlPiece = config.urlPiece;
 
 	var validateFlag = submitConfig.doValidation,
 		selector = submitConfig.selector;
 
-	/* idea for below logic:
-		1. get button click
-		2. get parent form's action
-		3. set submit listener
-		4. automatically pretent default
-		5. check for everything (valid, offline, store)
-		6. on 2nd round, set data param & allow submit
-	// */
-	// $saveButton = $('input[value="Save"]');
-	// $saveButton.attr('type', 'submit');
-	// $saveButtonClickHandler = $saveButton.attr('onclick');
-
+	// set up click listener and handle form submission
 	$(selector).click(function(e_click) {
-		$thisButton = $(this);
-		$parentForm = $thisButton.closest('form');
-
-		// 	if ( $parentForm.data().submitNow === 'true' )
-		// 		return true;	
-		// 	else
-		// 		e_submit.preventDefault();
-
-		// now do all of the promises checks :)
+		// do all of the promises checks :)
 		var p_container = [];
 
-		// TODO: remove validation promise
+		// check fields are valid
 		if (validateFlag)
 			p_container.push( doValidationCheck(validateFlag) );
 
 		p_container.push( doOfflineCheck() );
 
-		// run data check promises
+		// run validation & online check promises
 		Promise.all(p_container)
-
 		.then(function(responses) {
 			// get config objects from responses
 			var check_valid_err_config = responses[0],
@@ -108,12 +82,12 @@ function handleSubmit(config) {
 				errAPI = true;
 
 			// if ThrowError API isn't available, set flag to only throw
-			// console errors
+			// 	console errors
 			if (!ThrowError)
 				errAPI = false;
 
 			// loop through err configs to determine if each passed and
-			// when to throw ONE error (only one)
+			// 	when to throw ONE error (only one)
 			for (let e_config of [
 				check_valid_err_config,
 				check_offline_err_config
@@ -136,38 +110,41 @@ function handleSubmit(config) {
 
 			// condition for trigger:
 			if ( allPass ) {
-				
-				// $parentForm.data({'submitNow': 'true'});
-				// $parentForm.trigger('submit');
-
-				// If RIPS code thinks required info is valid (not empty),
-				// CheckClientDetailValid returns undefined. Else, returns false.
+				/**
+				 * NOTES ABOUT THIS FUNCTION:
+				 * 1) Don't add comments! These will comment out the rest of the function
+				 * 2) CheckClientDetailValid is RIPS code, not mine
+				 *    	- if data is 'valid' returns 'undefined'
+				 * 		- if data is 'invalid' returns false
+				 * 3) $.validator.methods.date is broken in jQuery validator plugin
+				 * 		- to fix, create custom date validation function like below
+				 * 		- docs: https://jqueryvalidation.org/jQuery.validator.methods/
+				 */
 				function evaluateTrigger() {
 					var result = CheckClientDetailValid();
 
 					if (result==false) {
-						console.log(`<${result}> :(`);
-						return false;
+						console.log(`Form data valid? <${result}> :(`);
+						return;
 					}
 
 					else {
-						console.log(`<${result}> :)`);
+						console.log(`Form data valid? <${result==undefined}> :)`);
 
 						$.validator.methods.date = function(value, element) {
 							return true;
 						};
 
 						var field = $('input[value="Save"].newField');
-						var form = field.closest('form');
-						
-						form.trigger('submit');
+						field.closest('form').trigger('submit');
 					}
 				}
 
-				let func = `${evaluateTrigger.toString()}; ${evaluateTrigger.name}();`;
+				// finish new href location code. goal = create function, then call function
+				let func = `javascript:${evaluateTrigger.toString()}; ${evaluateTrigger.name}();`;
 
-				let check = $(location).attr('href', 'javascript:' + func);
-
+				// call above code
+				$(location).attr('href', func);
 			}
 			
 			// do nothing, since error was already thrown
