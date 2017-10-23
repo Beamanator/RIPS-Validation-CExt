@@ -2,7 +2,7 @@ $(document).ready(function(){
 	let pageURL = $(location).attr('href');
 
 	loadValidation();
-	loadSubmitListeners(pageURL);
+	// loadSubmitListeners(pageURL);
 	loadViewManipulator(pageURL);
 
 	handleUserLogin(pageURL);
@@ -29,10 +29,10 @@ function loadValidation() {
  * 
  * @param {string} pageURL - url of current page
  */
-function loadSubmitListeners(pageURL) {
-	// call submit listener api
-	SetupSubmitListeners(pageURL);
-}
+// function loadSubmitListeners(pageURL) {
+// 	// call submit listener api
+// 	SetupSubmitListeners(pageURL);
+// }
 
 /**
  * Function is responsible for changing the view for different purposes

@@ -13,20 +13,22 @@ function Manipulate(url, username) {
     // set up exception holder for each manipulator here
     // Note: all contents of this obj should be LOWER-CASE!
     var userExceptionHolder = {
-        hideDeleteButton: ['staff'],
+        showDeleteButton: ['staff'],
         hideEmptyServiceBoxes: ['staff']
     };
 
     // Registration Page
     if ( urlHas(url, 'Registration/Registration') ) {
-        mEnableDataRecovery(url);
+        // mEnableDataRecovery(url);
+        mCreateSaveButton(url);
     }
 
     // Client Basic Information Page
     else if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
-        mHideDeleteButton(username,
-            userExceptionHolder.hideDeleteButton);
-        mEnableDataRecovery(url);
+        mShowDeleteButton(username,
+            userExceptionHolder.showDeleteButton);
+        // mEnableDataRecovery(url);
+        mCreateSaveButton(url);
         // mAddArchiveEmail(username);
         // mMoveNeighborhoodButton(username);
     }
@@ -88,100 +90,32 @@ function mAutoSelectCW( username ) {
 }
 
 /**
- * FIXME: remove initial 'return' statement to actually enable data recovery
- * Function adds data recovery button to page IFF 'CACHED_DATA' is availble from local storage
+ * Function creates a new save button, with controllable
+ * validation before form gets submitted
  * 
- * @param {string} url url of current page
+ * @param {string} url - url of current page
  */
-function mEnableDataRecovery(url) {
-    return;
+function mCreateSaveButton(url) {
+    /**
+     * plan:
+     * 1) get original save button (jQuery)
+     * 2) create new save button
+     * 3) place new button right after old one (still in header)
+     * 4) create submit listener, or direct function call in SSL.js
+     * 5) Add ajax requests from old code, in SetupSubmitListeners
+     */
+    // 1 -> Get old save button
+    let $oldSave = $('input[value="Save"]');
 
-    // TODO: check if error is present on the page. If so, store error flag?
-    // not sure if error flag will be 'true' or true (string or boolean)
+    // 2 -> create new save button
+    let newSave = '<input type="button" value="Save" ' +
+        'class="newField">';
 
-    /* timeout details:
-        Registration Page:
-            -> Incredibly long timeout - clicked "Save"
-                result: login page (with this url:
-                http://rips.247lib.com/Stars/User/Login?ReturnUrl=%2fStars%2fClientDetails%2fClientDetails)
-        Client Basic Iinformation
-            -> click 'Save' after timeout
-                result: Login page (no popup warning / anything)
-    */
+    // 3 -> insert new input after old save button
+    $oldSave.after(newSave);
 
-    /*
-        FIXME: [new idea = new color, not a fixme moment]
-        Currently we already have button working & storing CACHED data working
-            we only need to limit when to show recovery html
-            -> This will be shown when:
-                - CACHED_DATA is available
-                    and either
-                1) error flag was stored
-                    or
-                2) recent login flag was stored
-
-        The pages that will maybe need to check for error text are:
-            Client Basic information (for cbi / registration saves)
-                Check if error exists
-            TODO: Action page
-                Check if error exists
-        The pages that will need to check HISTORY are:
-            Login page
-                Check history for most recent rips page being Reg or CBI
-                TODO: or action page
-    */
-    
-    // debugger;
-    // new idea: maybe look at last 5 items with 'rips.247lib.com/stars' in history?
-    // TODO: do stuff with history
-    // var mObj2 = {
-    //     action: 'get_data_from_chrome_history'
-    // };
-    // chrome.runtime.sendMessage(mObj2, function(response) {
-    //     // do stuff with history data
-    //     debugger;
-    // });
-
-    // debugger;
-
-    // flag has been set, now next check if cached data is available.
-    var mObj = {
-        action: 'get_data_from_chrome_storage_local',
-        keysObj: {
-            CACHED_DATA: ''
-        }
-    };
-
-    // get cached data from chrome
-    chrome.runtime.sendMessage(mObj, function(response) {
-        var cachedDataObj = response['CACHED_DATA'];
-
-        debugger;
-        // get url piece from cached data - indicates url where cached data was stored
-        var urlPiece = cachedDataObj.URL_PIECE;
-
-        if (cachedDataObj === '')
-            return;
-
-        // check if current url contains cached data url piece
-        // - if so, add html. if not, quit.
-        // TODO: here, also make sure error flag has been thrown / stored?
-        if ( urlHas(url, urlPiece) ) {
-            var recoverHTML = getRecoverHTML();
-
-            // add html to page
-            $('body').append(recoverHTML);
-
-            // show recovery panel w/ animation
-            $('#restore-ui').show(500);
-
-            // set up click events on recovery panel
-            $('#restore-ui-action').click(function( e_click ) {
-                mRecoverData( e_click, cachedDataObj ); 
-            });
-            $('#restore-ui-clear').click( mClearCachedData );
-        }
-    });
+    // 4 -> setup click listener on newSave button
+    SetupRipsSubmitListener(url, 'input[value="Save"].newField');
 }
 
 /**
@@ -278,22 +212,22 @@ function mCleanNoteText() {
 }
 
 /**
- * Function hides delete button for all non-exempt users
+ * Function shows delete button for specified user(s)
  * 
  * @param {string} username person logged in
- * @param {array} exceptions array of potential usernames for exempted users
+ * @param {array} exceptions array of usernames to show delete button for
  * @returns success of manipulation (true = successful, false = unsuccessful)
  */
-function mHideDeleteButton(username, exceptions) {
+function mShowDeleteButton(username, exceptions) {
     // lowercase username to match exceptions format:
     username = username.toLowerCase();
 
-    // if username is exempt from manipulator, return true (success)
-    if ( exceptions.includes(username) )
+    // if username isn't in exceptions, quit early - return true (success)
+    if ( !exceptions.includes(username) )
         return true;
 
-    // now real logic for hiding the button:
-    // [added button b/c recently was changed to button html element]
+    // now real logic for showing the button:
+    // [added button type b/c recently was changed to button html element]
     var $del1 = $('input[value="Delete"]'),
         $del2 = $('button[value="Delete"]');
 
@@ -306,11 +240,11 @@ function mHideDeleteButton(username, exceptions) {
     // hide (lots of ways to do this)
     // ex: $del.css('display', 'none');
     if ($del1.length === 1) {
-        $del1.hide();
+        $del1.show();
     }
 
     else if ($del2.length === 1) {
-        $del2.hide();
+        $del2.show();
     }
 
     return true;
