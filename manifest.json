@@ -40,6 +40,12 @@
 
 				"js/MainContent.js"
 			]
+		}, {
+			"matches": [ "http://rips.247lib.com/Stars/ClientDetails/ClientDetails" ],
+			"css": [ "css/styles_CBI.css" ]
+		}, {
+			"matches": [ "http://rips.247lib.com/Stars/Registration/Registration" ],
+			"css": [ "css/styles_REG.css" ]
 		}
 	],
 	"background": {
