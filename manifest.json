@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "0.1.13",
+	"version": "0.1.14",
 
 	"description": "RIPS Extension - Adds validation on UNHCR #, Phone #, and DOB",
 
