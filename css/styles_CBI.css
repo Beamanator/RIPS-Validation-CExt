@@ -2,11 +2,11 @@
 
 /* STRATEGY: Remove inputs / buttons by DEFAULT */
 form > fieldset > input[value="Save"]
-{  display: none !important;  }
+{  display: none;  }
 form > fieldset > input[value="Delete"]
-{  display: none !important;  }
+{  display: none;  }
 form > fieldset > button[value="Delete"]
-{  display: none !important;  }
+{  display: none;  }
 
 /* replacement fields should have new class to differentiate */
 form > fieldset > input.newField
