@@ -19,16 +19,18 @@ function Manipulate(url, username) {
 
     // Registration Page
     if ( urlHas(url, 'Registration/Registration') ) {
-        // mEnableDataRecovery(url);
         mCreateSaveButton(url);
+        mClickInputButton('showDependency');
     }
 
     // Client Basic Information Page
     else if ( urlHas(url, 'ClientDetails/ClientDetails') ) {
+        mCreateSaveButton(url);
         mShowDeleteButton(username,
             userExceptionHolder.showDeleteButton);
-        // mEnableDataRecovery(url);
-        mCreateSaveButton(url);
+        
+        mClickInputButton('showHiddenVul');
+        mClickInputButton('showDependency');
         // mAddArchiveEmail(username);
         // mMoveNeighborhoodButton(username);
     }
@@ -73,6 +75,9 @@ function mAutoSelectCW( username ) {
     let caseworkerArr = $('select#CASEWORKERID option'),
         id = undefined;
 
+    if (caseworkerArr.length === 0)
+        console.warn('No Caseworker Options Found :(');
+
     // loop through caseworkers, looking for 'username' caseworker
     for (let i = 0; i < caseworkerArr.length; i++) {
         let elem = caseworkerArr[i];
@@ -89,6 +94,23 @@ function mAutoSelectCW( username ) {
         $('select#CASEWORKERID').val(id);
 }
 
+/**
+ * Function clicks inputs with passed-in ids in html
+ * 
+ * @param {string} id - html id of input that will be clicked if found
+ */
+function mClickInputButton( id ) {
+    $button = $(`input#${id}`);
+    
+    // throw warning if no button found.
+    if ($button.length === 0)
+        console.warn(`Couldn't find button with id: <${id}>`);
+    
+    // else, click it!
+    else
+        $button.click();
+}
+    
 /**
  * Function creates a new save button, with controllable
  * validation before form gets submitted

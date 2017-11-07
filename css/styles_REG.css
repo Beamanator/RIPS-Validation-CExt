@@ -3,7 +3,6 @@
 /* STRATEGY: Remove inputs / buttons by DEFAULT */
 form > fieldset > div > input#regClient
 {  display: none;  }
-
 /* replacement fields should have new class to differentiate */
 form > fieldset > div > input.newField
 {  display: inline;  }
