@@ -31,6 +31,8 @@ function Manipulate(url, username) {
         
         mClickInputButton('showHiddenVul');
         mClickInputButton('showDependency');
+
+        mCheckDepVulnPopulated();
         // mAddArchiveEmail(username);
         // mMoveNeighborhoodButton(username);
     }
@@ -63,6 +65,89 @@ function getServiceBoxElemID() { return 'MatterTypeDesc'; }     // get ID of ele
 // ========================================================================
 //                       MAIN MANIPULATOR FUNCTIONS
 // ========================================================================
+
+/**
+ * Function checks the status of dependent and vulnerability information.
+ * 
+ * If both sections are filled out, the user can move to another tab. Otherwise,
+ * a warning will pop up and the user cannot navigate away.
+ * 
+ */
+function mCheckDepVulnPopulated() {
+    // get dependent inputs starting with "CDDependentStatsLabel"
+    let $dependentInputs = $('form#postClntDependentStatsSubmit')
+        .find('input[id^=CDDependentStatsLabel]');
+
+    // get vuln checkboxes starting with PostedVulDicts_VulID
+    let $vulnCheckboxes = $('form#postClntVulSubmit')
+        .find('input[id^=PostedVulDicts_VulID]'),
+        $vulnNotes = $('div#DivVulnerablity textarea#DescNotes');
+
+    if ($dependentInputs.length === 0 ||
+        $vulnCheckboxes.length === 0 ||
+        $vulnNotes.length === 0) {
+        
+        console.error('Could not find all dependent / vulnerability fields');
+    }
+
+    let depPopulated = false,
+        vulnPopulated = false;
+
+    // first check dependent info
+    for (elem of $dependentInputs) {
+        if (elem.value !== '') {
+            depPopulated = true;
+            break;
+        }
+    }
+
+    // second check vulnerability info
+    for (elem of $vulnCheckboxes) {
+        if (elem.checked === true) {
+            vulnPopulated = true;
+            break;
+        }
+    }
+
+    // finally, check if vulnNotes is populated IF no checkboxes are checked
+    if (!vulnPopulated) {
+        if ($vulnNotes.val() !== '') vulnPopulated = true;
+    }
+
+    if (!depPopulated || !vulnPopulated) {
+        // get menu links from sidebar
+        $menuItems = $('div#menu').find('a[href^="/Stars/"]');
+
+        if ($menuItems.length === 0)
+            console.error('cannot find sidebar menu!!');
+        
+        // setup click listener
+        $menuItems.click(function(e_click) {
+            // NOW, throw errors if groups of data aren't populated
+            let errTitle = 'Error: Missing client data.';
+            let errMessage = 'Please fill out these sections AND SAVE' +
+                '\\nbefore moving to another tab:\\n';
+
+            if (!depPopulated) errMessage += '\\n- Dependents';
+            if (!vulnPopulated) errMessage += '\\n- Vulnerabilities';
+
+            // warn user
+            if (ThrowError) {
+                ThrowError({
+                    title: errTitle,
+                    message: errMessage,
+                    errMethods: ['mConsole', 'mSwal']
+                });
+            } else {
+                console.error(errTitle + ' - ' + errMessage);
+            }
+
+            // pretend default click action (no href redirect)
+            e_click.preventDefault();
+            return false;
+        });
+    }
+}
 
 /**
  * Function automatically selects a caseworker - IF the logged in user

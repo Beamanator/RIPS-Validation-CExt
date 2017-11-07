@@ -16,6 +16,8 @@
 	@Params:
 		config = configuration object with the following possible properties:
 
+			title:			(String) - title to display on swal errors only
+
 			message: 		(String) - message to display via errorTypes array
 
 			errMethods: 	(Array) - List of methods for displaying error message
