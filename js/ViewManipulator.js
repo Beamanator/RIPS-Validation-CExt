@@ -131,6 +131,8 @@ function mCheckDepVulnPopulated() {
             if (!depPopulated) errMessage += '\\n- Dependents';
             if (!vulnPopulated) errMessage += '\\n- Vulnerabilities';
 
+            errMessage += '\\n\\n[Press "ESC" to go back]';
+
             // warn user
             if (ThrowError) {
                 ThrowError({
@@ -142,9 +144,22 @@ function mCheckDepVulnPopulated() {
                 console.error(errTitle + ' - ' + errMessage);
             }
 
-            // pretend default click action (no href redirect)
+            let $clickedElem = $(this);
+
+            // set timeout 
+            setTimeout(function($clickedElem) {
+                $okButton = $('div.sa-button-container button.confirm');
+
+                // when 'ok' button is clicked, redirect to originally clicked link
+                $okButton.click(function(e) {
+                    $(location).attr('href', $clickedElem.attr('href'));
+                });
+
+                // if 'escape' is pressed, swal will close, but no redirect will happen.
+            }, 1000, $clickedElem);
+
+            // prevent initial click action
             e_click.preventDefault();
-            return false;
         });
     }
 }
