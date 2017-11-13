@@ -124,7 +124,7 @@ function mCheckDepVulnPopulated() {
         // setup click listener
         $menuItems.click(function(e_click) {
             // NOW, throw errors if groups of data aren't populated
-            let errTitle = 'Error: Missing client data.';
+            let errTitle = 'Warning: Missing client data.';
             let errMessage = 'Please fill out these sections AND SAVE' +
                 '\\nbefore moving to another tab:\\n';
 
@@ -146,7 +146,7 @@ function mCheckDepVulnPopulated() {
 
             let $clickedElem = $(this);
 
-            // set timeout 
+            // set timeout to wait for swal error to pop up
             setTimeout(function($clickedElem) {
                 $okButton = $('div.sa-button-container button.confirm');
 
@@ -156,7 +156,7 @@ function mCheckDepVulnPopulated() {
                 });
 
                 // if 'escape' is pressed, swal will close, but no redirect will happen.
-            }, 1000, $clickedElem);
+            }, 800, $clickedElem);
 
             // prevent initial click action
             e_click.preventDefault();

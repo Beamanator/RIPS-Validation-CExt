@@ -11,3 +11,11 @@ form > fieldset > button[value="Delete"]
 /* replacement fields should have new class to differentiate */
 form > fieldset > input.newField
 {  display: inline;  }
+
+/* Make some vulnerabilities bold - reporting vulnerabilities */
+/* Vuln "SGBV Survivor" -> value = 7  */
+input[value="7"] + label { font-weight: bold; font-size: 16px; }
+/* Vuln "Severe Protection Concerns" -> value = 8  */
+input[value="8"] + label { font-weight: bold; font-size: 16px; }
+/* Vuln "Survivor of Torture" -> value = 11  */
+input[value="11"] + label { font-weight: bold; font-size: 16px; }
