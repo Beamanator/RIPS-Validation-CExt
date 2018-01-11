@@ -268,7 +268,7 @@ function FB_handleUserLogin(fb, mObj) {
     if (!username.trim())
         username = 'unknown';
 
-    // get user holder -> user object from firebase
+    // GET user holder -> user object from firebase
     var userHolderPromise = fb.database()
         .ref('/user_holder/' + cExtVersion + '/' + username)
         .once('value');
