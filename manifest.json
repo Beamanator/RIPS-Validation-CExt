@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "0.1.19",
+	"version": "0.1.20",
 
 	"description": "RIPS Extension - Adds validation on UNHCR #, Phone #, and DOB",
 
@@ -41,10 +41,13 @@
 			]
 		}, {
 			"matches": [ "http://rips.247lib.com/Stars/ClientDetails/ClientDetails" ],
-			"css": [ "css/styles_CBI.css" ]
+			"css": [ "css/overrides/styles_CBI.css" ]
 		}, {
 			"matches": [ "http://rips.247lib.com/Stars/Registration/Registration" ],
-			"css": [ "css/styles_REG.css" ]
+			"css": [ "css/overrides/styles_REG.css" ]
+		}, {
+			"matches": [ "http://rips.247lib.com/Stars/Report/ReportPreview*" ],
+			"css": [ "css/overrides/styles_RPT.css" ]
 		}
 	],
 	"background": {
