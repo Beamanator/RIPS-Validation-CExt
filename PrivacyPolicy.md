@@ -5,7 +5,7 @@ Here are the ways that the RIPS Validation Extension changes / uses your webpage
 When users log in to RIPS, username is stored in Firebase Database. This is the data stored in the database:
 1) username
 2) last login date
-3) # of times user has logged in, on current version of extension
+3) Number of times user has logged in, on current version of extension
 
 This is meant for a few purposes:
 1) Tracking how many RIPS users have accessed RIPS on current version of extension
