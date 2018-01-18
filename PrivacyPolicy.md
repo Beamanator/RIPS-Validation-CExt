@@ -1,5 +1,5 @@
 # Privacy Policy
-Here are the ways that the RIPS Validation Extension changes / uses your webpage:
+Here are the ways that the **RIPS Validation Extension** changes / uses your webpage:
 
 ## Login Name Tracking
 When users log in to RIPS, username is stored in Firebase Database. This is the data stored in the database:
