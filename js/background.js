@@ -239,7 +239,7 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  */
 function FB_handleUserLogin(fb, mObj) {
     let username = mObj.username,
-        dateToday = (new Date())
+        dateToday = (new Date()),
         cExtVersion = chrome.runtime.getManifest().version;
 
     // replace period '.' chars with dashes '-' for firebase to accept it
