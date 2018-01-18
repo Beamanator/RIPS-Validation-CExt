@@ -238,7 +238,6 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * @param {object} mObj - message config object with username data
  */
 function FB_handleUserLogin(fb, mObj) {
-    debugger;
     let username = mObj.username,
         dateToday = (new Date())
         cExtVersion = chrome.runtime.getManifest().version;
