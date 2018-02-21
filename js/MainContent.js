@@ -17,6 +17,7 @@ $(document).ready(function(){
 function loadValidation() {
 	setValidateUNHCR( true );
 	setValidatePhoneNo( true );
+	setValidateOtherPhoneNo( true );
 	setValidateDates( true );
 }
 
@@ -65,6 +66,7 @@ function handleUserLogin(pageURL) {
  */
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
+function getOtherPhoneElemId() { return 'CDAdrTelLabel'; }
 function getDateElemIDs() { return ['LDATEOFBIRTH']; }
 
 /**
@@ -77,6 +79,7 @@ function getUsernameElem() { return $('a.username[title="Manage"]'); }
  */
 function getUnhcrElem() { return $('#'+getUnhcrElemID() ); }
 function getPhoneElem() { return $('#'+getPhoneElemID() ); }
+function getOtherPhoneElem() { return $('#'+getOtherPhoneElemId() ); }
 function getDateElems() {
 	let dateElemIDs = getDateElemIDs(),
 		$dateElems = [];
@@ -117,6 +120,22 @@ function setValidatePhoneNo(on) {
 		});
 	} else {
 		getPhoneElem().unbind("blur");
+	}
+}
+
+/**
+ * Function does the same as setValidatePhoneNo, but for the "Other Phone" field
+ * on Registration & Client Basic Information pages
+ * 
+ * @param {any} on 
+ */
+function setValidateOtherPhoneNo(on) {
+	if (on) {
+		getOtherPhoneElem().blur(function(e) {
+			validatePhoneNo( $(this), true, 'other' );
+		});
+	} else {
+		getOtherPhoneElem().unbind("blur");
 	}
 }
 
@@ -187,12 +206,12 @@ chrome.runtime.onMessage.addListener( function(request, MessageSender, sendRespo
 	if( request.message === "clicked_browser_action" ) {
 		// console.log(request.value, request.on);
 		switch (request.value) {
-			case "validate_unhcr":
-				setValidateUNHCR(request.on);
-				break;
-	        case "validate_phone":
-	        	setValidatePhoneNo(request.on);
-        		break;
+			// case "validate_unhcr":
+			// 	setValidateUNHCR(request.on);
+			// 	break;
+	        // case "validate_phone":
+	        // 	setValidatePhoneNo(request.on);
+        	// 	break;
         	// case "validate_dates":
         	// 	changeValidateDates(request.on);
         	// 	break;
@@ -287,7 +306,7 @@ function validateUNHCR($elem, throwErrorFlag) {
         if (num.match(format) == null) {
         	return false;
         } else {
-        	placeInputValue('UNHCR', num);
+        	placeInputValue($elem, num);
         	return true; 
         }
     }
@@ -309,7 +328,7 @@ function validateUNHCR($elem, throwErrorFlag) {
         if (num.match(format) == null) {
             return false;
         } else {
-        	placeInputValue('UNHCR', num);
+        	placeInputValue($elem, num);
         	return true
         }
     }
@@ -333,7 +352,7 @@ function validateUNHCR($elem, throwErrorFlag) {
     	if (num.match(format1) == null && num.match(format2) == null) {
     		return false;
     	} else {
-    		placeInputValue('UNHCR', num);
+    		placeInputValue($elem, num);
     		return true;
     	}
     }
@@ -346,14 +365,14 @@ function validateUNHCR($elem, throwErrorFlag) {
 
     	// check if it is "NONE"
     	if (num === 'NONE') {
-    		placeInputValue('UNHCR', 'None');
+    		placeInputValue($elem, 'None');
     		return true;
     	} else {
     		return false;
     	}
     }
 
-    // get UNHCR number from input box
+    // get UNHCR number from input box (in string data type)
     var UNHCRID = "" + $elem.val();
 
     // quit if number is empty
@@ -363,7 +382,7 @@ function validateUNHCR($elem, throwErrorFlag) {
     UNHCRID = UNHCRID.toUpperCase();
 
     // put upper-case value back into input box
-    placeInputValue('UNHCR', UNHCRID);
+    placeInputValue($elem, UNHCRID);
 
     // Logic for deciding which format to validate on
     if (
@@ -395,10 +414,11 @@ function validateUNHCR($elem, throwErrorFlag) {
  * 		Removes all other characters that aren't numbers
  * 
  * @param {object} $elem - jQuery element that needs validation check
- * @param {boolean} throwErrorFlag if true, errors is thrown. If false, is not thrown
- * @returns boolean for valid field (true = valid, false = invalid) 
+ * @param {boolean} throwErrorFlag - true ? error is thrown : error is not thrown
+ * @param {string} [type='main'] - 'main' or 'other' phone number
+ * @returns {boolean} - valid field (true = valid, false = invalid) 
  */
-function validatePhoneNo($elem, throwErrorFlag) {
+function validatePhoneNo($elem, throwErrorFlag, type='main') {
 	function formatNum(num) {
 		// use a regexp to replace 'I' or 'L' with '1'
 		// num = num.replace(/[IL]/g,'1');
@@ -406,13 +426,23 @@ function validatePhoneNo($elem, throwErrorFlag) {
 		// replace letter O's with 0's
 		num = num.replace(/O/g,"0");
 
-		// remove other characters potentially in phone number:
-		num = num.replace(/[^0123456789]/g,'');
+		// if type is 'main', remove non-digit characters in phone number:
+		if (type == 'main') {
+			num = num.replace(/[^0123456789]/g,'');
+		}
+		
+		// if type is 'other', allow some delimiters and all #s
+		else if (type == 'other') {
+			num = num.replace(/[^0123456789,;/-]/g, '');
+		}
+
+		// somehow no 'type' was passed
+		else return '';
 
 		return num;
 	}
 
-	// can use '\\n' to enter text on a new line if needed
+	// can use '\\n' in swal error string to enter text on a new line if needed
     function throwPhoneNoError(message, fatal) {
     	var title;
 
@@ -420,7 +450,7 @@ function validatePhoneNo($elem, throwErrorFlag) {
 			message = 'Please fix phone number format and try again';
 
     	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
-		// or no message, or throwErrorFlag is false -> quit
+		// 	or no message, or throwErrorFlag is false -> quit
     	if (!ThrowError || !throwErrorFlag) {
 			console.error('Phone # Error: ', message);
 			return;
@@ -428,9 +458,9 @@ function validatePhoneNo($elem, throwErrorFlag) {
 
     	// if fatal flag is set, show different title on swal
     	if (fatal) {
-    		title = 'Invalid Preferred Phone #';
+    		title = 'Invalid Phone #';
     	} else {
-    		title = 'Warning: Preferred Phone # Edited';
+    		title = 'Warning - Phone #';
     	}
 
     	ThrowError({
@@ -447,7 +477,7 @@ function validatePhoneNo($elem, throwErrorFlag) {
 	var num = formatNum( num.toUpperCase() );
 
 	// replace text w/ new formatted text	
-	placeInputValue('PHONE', num);
+	placeInputValue($elem, num);
 
 	// quit if num is empty
 	if ( !num ) return;
@@ -456,8 +486,9 @@ function validatePhoneNo($elem, throwErrorFlag) {
 		// if leading number is a 0, then throw error and don't add leading 0
 		// because phone #s can't be '00...'
 		if ( num[0] === '0' ) {
-			throwPhoneNoError('Please fix phone number. The current phone number ' +
-				'is only 10 numbers beginning with 0, which is invalid.', 1);
+			throwPhoneNoError(`Please fix "${type}" phone number. The entered` +
+				' number is only 10 digits, beginning with 0, which is invalid.',
+				true);
 
 			return false;
 		}
@@ -466,10 +497,10 @@ function validatePhoneNo($elem, throwErrorFlag) {
 		num = '0' + num;
 
 		// throw new number back into input box for user to see
-		placeInputValue('PHONE', num);
+		placeInputValue($elem, num);
 
 		// show user warning
-		throwPhoneNoError('Added leading 0 to phone number');
+		throwPhoneNoError(`Added leading 0 to "${type}" phone number`, false);
 
 		return true;
 	}
@@ -479,19 +510,52 @@ function validatePhoneNo($elem, throwErrorFlag) {
 		// first character must be a '0'
 		if ( num[0] !== '0' ) {
 			throwPhoneNoError('The first digit of phone number in Egypt ' +
-				'must be a "0". Please fix phone number.', 1);
+				'must be a "0". Please fix phone number.', true);
 
 			return false;
 		}
 
-		// do nothing since other conditions passed
+		// pass since other conditions passed
 		return true;
 	}
 	
-	// if phone number is < 10 or > 11 characters, can't fix here. throw error.
+	// if phone number is > 11 characters, only allow in 'other phone' field
+	else if (num.length > 11) {
+		// default -> not allowed
+		if (type == 'main') {
+			throwPhoneNoError('Preferred Phone # must be 11 digits.\\n\\n' +
+				'Not more! Please fix!', true);
+
+			return false;
+		}
+
+		// 'other' phone #s are allowed to be more than 11 characters, in case
+		// 	client has multiple 'other' numbers here.
+		// TODO: maybe check if length is divisible by 11, or something?
+		else if (type == 'other') {
+			// send warning message
+			throwPhoneNoError('Other Phone # is longer than 11 characters.\\n\\n' +
+				'Please make sure it is accurate!', false);
+			
+			return true;
+		}
+
+		// shouldn't be here... only 2 types for now :)
+		else {
+			ThrowError({
+				title: 'ERROR!',
+				message: `Invalid "type" <${type}> in validatePhoneNo fn`,
+				errMethods: ['mConsole']
+			});
+			
+			return true;
+		}
+	}
+
+	// phone number is < 10 characters. can't fix here. throw error.
 	else {
-		throwPhoneNoError('Preferred Phone # must be 11 numbers.\\n\\n' +
-			'Extra #s should go in "Other phone" field', 1);
+		throwPhoneNoError(`Entered "${type}" phone number is less than\\n` +
+			'10 digits - Please fix!', true);
 
         return false;
 	}
@@ -551,7 +615,7 @@ function validateDate($elem, throwErrorFlag) {
 	
 	// error if day is out of range
 	else if (d < 1 || d > 31) {
-		throwDateError('Day entered (' + d + ') is out of range (1 - 31)');
+		throwDateError(`Day entered (${d}) is out of range (1 - 31)`);
 		return false;
 	}
 
@@ -575,27 +639,17 @@ function validateDate($elem, throwErrorFlag) {
 //                             OTHER FUNCTIONS
 // ========================================================================
 
-// places value into specified field
-// @param:
-// 	field: fields supported: 'UNHCR', 'PHONE'
-function placeInputValue(field, val) {
-	if (!field) return;
+/**
+ * Places value into specified field
+ * 
+ * @param {object} $elem - jQuery element where 'val' param should be placed
+ * @param {string} val 
+ * @returns - undefined (only if $elem doesn't match an element)
+ */
+function placeInputValue($elem, val) {
+	if (!$elem || $elem.length == 0) return;
 
-	var elem_id_unhcr = getUnhcrElemID(); 
-	var elem_id_phone = getPhoneElemID();
-
-	field = field.toUpperCase();
-
-	switch(field) {
-		case 'UNHCR':
-			$('#' + elem_id_unhcr).val(val);
-			break;
-		case 'PHONE':
-			$('#' + elem_id_phone).val(val);
-			break;
-		default:
-			console.log('field <' + field + '> not recognized');
-	}
+	$elem.val(val);
 }
 
 // function to localize where messages are sent
@@ -618,27 +672,4 @@ function message(text, option) {
 			console.log(text);
 		}
 	}
-}
-
-/**
- * Function sends data to background.js for storage.
- * 
- * Format of dataObj: {
- * 		key1: value1,
- * 		key2: value2
- * }
- * 
- * @param {object} dataObj obj with all key:value pairs to store to chrome local storage
- * @param {function} callback function to call after data is stored
- * @returns nothing at this time
- */
-function updateStorageLocal(dataObj, callback) {
-	// set up message config object
-	var mObj = {
-		action: 'store_data_to_chrome_storage_local',
-		dataObj: dataObj
-	};
-	
-	// send message config to background.js
-	chrome.runtime.sendMessage(mObj, callback);
 }

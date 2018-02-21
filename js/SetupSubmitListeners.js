@@ -75,8 +75,16 @@ function handleSubmit(config) {
 		Promise.all(p_container)
 		.then(function(responses) {
 			// get config objects from responses
-			var check_valid_err_config = responses[0],
+			var check_valid_err_config;
+			var check_offline_err_config;
+
+			// if true,
+			if (validateFlag) {
+				check_valid_err_config = responses[0];
 				check_offline_err_config = responses[1];
+			} else {
+				check_offline_err_config = responses[0];
+			}
 
 			var allPass = true,
 				errAPI = true;
@@ -208,9 +216,12 @@ function doValidationCheck(validateFlag) {
 
 		var valUNHCR = true;
 		var valPhone = true;
+		var valOtherPhone = true;
 		var valDates = true;
 
 		var fieldsValidFlag = true;
+		
+		// unhcr number
 		if ( fieldsValidFlag && valUNHCR !== false) {
 			let $elem = getUnhcrElem();
 			fieldsValidFlag = validateUNHCR($elem, false);
@@ -218,11 +229,20 @@ function doValidationCheck(validateFlag) {
 				err_config['message'] = 'Check UNHCR number format';
 		}
 
+		// "main" phone number
 		if ( fieldsValidFlag && valPhone !== false) {
 			let $elem = getPhoneElem();
 			fieldsValidFlag = validatePhoneNo($elem, false);
 			if (!fieldsValidFlag)
-				err_config['message'] = 'Check phone number format';
+				err_config['message'] = 'Check "preferred" phone number format';
+		}
+
+		// "other" phone number
+		if ( fieldsValidFlag && valOtherPhone !== false) {
+			let $elem = getOtherPhoneElem();
+			fieldsValidFlag = validatePhoneNo($elem, false, 'other');
+			if (!fieldsValidFlag)
+				err_config['message'] = 'Check "other" phone number format';
 		}
 
 		// TODO: maybe make error message more specific?
