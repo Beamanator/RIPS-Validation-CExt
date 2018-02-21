@@ -52,13 +52,6 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
             async = true;
             break;
 
-        // gets data from chrome history
-        case 'get_data_from_chrome_history':
-            getChromeHistoryItems(mObj, sendResponse);
-            // async because uses promises
-            async = true;
-            break;
-
         // save data to chrome's local storage
         case 'store_data_to_chrome_storage_local':
             storeToChromeLocalStorage(mObj, sendResponse);
@@ -139,17 +132,6 @@ function getValuesFromChromeLocalStorage(mObj, responseCallback) {
         var obj = Serialize_ArrayToObj(responses);
 
         responseCallback( obj );
-    });
-}
-
-function getChromeHistoryItems(mObj, responseCallback) {
-    chrome.history.search({
-        'text': 'rips.247lib.com/stars/',
-        'maxResults': 20
-    }, function(results) {
-        console.log('history results:', results);
-
-        responseCallback(results);
     });
 }
 
@@ -256,9 +238,8 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * @param {object} mObj - message config object with username data
  */
 function FB_handleUserLogin(fb, mObj) {
-    debugger;
     let username = mObj.username,
-        dateToday = (new Date())
+        dateToday = (new Date()),
         cExtVersion = chrome.runtime.getManifest().version;
 
     // replace period '.' chars with dashes '-' for firebase to accept it
