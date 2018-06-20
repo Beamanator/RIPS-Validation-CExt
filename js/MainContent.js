@@ -39,6 +39,7 @@ function loadViewManipulator(pageURL) {
  * @param {string} pageURL - url of current page
  */
 function handleUserLogin(pageURL) {
+	
 	var username = getUsernameElem().text();
 
 	// if page is 'recently accessed clients', handle login in background.js
@@ -57,7 +58,7 @@ function handleUserLogin(pageURL) {
 	}
 
 	else {
-		// do nothing since we should have already counded this user
+		// do nothing since we should have already counted this user
 	}
 }
 
