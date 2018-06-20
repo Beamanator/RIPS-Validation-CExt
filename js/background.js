@@ -238,87 +238,112 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * @param {object} mObj - message config object with username data
  */
 function FB_handleUserLogin(fb, mObj) {
-    let username = mObj.username,
+    let username = mObj.username.toLowerCase(),
         dateToday = (new Date()),
         cExtVersion = chrome.runtime.getManifest().version;
 
     // replace period '.' chars with dashes '-' for firebase to accept it
     cExtVersion = cExtVersion.replace(/[.]/g, '-');
 
-    // if username is undefined [somehow], set username to 'unknown']
+    // if username is undefined (somehow), set username to 'unknown'
     if (!username.trim())
         username = 'unknown';
 
     // GET user holder -> user object from firebase
     var userHolderPromise = fb.database()
-        .ref('/user_holder/' + cExtVersion + '/' + username)
+        .ref(`/user_holder/${cExtVersion}/${username}`)
         .once('value');
- 
-    userHolderPromise.then( function(snapshot) {
-        let userData = snapshot.val(),
-            newLoginDate,
-            newLoginCount;
 
-        // if user data doesn't exist or isn't defined well, set firebase data
-        // to starting values
-        if ( !userData || typeof(userData) !== 'object' || 
-                Object.keys(userData).length === 0 ) {
-            newLoginCount = 1;
-            newLoginDate = dateToday.toDateString();
-        }
-        
-        // else, evaluate old data to determind if data should be updated or
-        // also set to startin values
-        else {
-            let oldLoginCount = parseInt( userData.login_count, 10),
-                oldLoginDate = (new Date( userData.last_login ));
+    // if username is unknown, just add count
+    if (username === 'unknown') {
+        userHolderPromise.then(snapshot => {
+            // data to store = today's date and count + 1
+            let userData = snapshot.val(),
+                newLoginDate = dateToday.toDateString(),
+                newLoginCount = (+userData.login_count) + 1;
 
-            // ==== evaluate login count ====:
-            if ( !oldLoginCount ) // NaN
-                newLoginCount = 0;
-            else
-                newLoginCount = oldLoginCount;
+            // store new data in firebase
+            fb.database().ref(`/user_holder/${cExtVersion}/${username}`)
+            .set({
+                last_login: newLoginDate,
+                login_count : newLoginCount
+            });
 
-            // ==== evaluate last login date ====:
-            if (oldLoginDate.toDateString() !== 'Invalid Date') {
-                // check if old date is before current date
-                if ( oldLoginDate.setHours(0,0,0,0) <
-                        dateToday.setHours(0,0,0,0) ) {
-                    newLoginDate = dateToday.toDateString();
-                    newLoginCount++;
-                }
+            // send message to background page console for tracking / fun
+            console.info(
+                'Data passed to Firebase for user login tracking:',
+                [newLoginCount, newLoginDate]
+            );
+        });
+    }
 
-                // check if old date is same as current date
-                else if ( oldLoginDate.setHours(0,0,0,0) ===
-                        dateToday.setHours(0,0,0,0) ) {
-                    // nothing to update so quit.
-                    return;
-                }
+    // else, do logic to see when they last logged in?
+    else {
+        userHolderPromise.then( snapshot => {
+            let userData = snapshot.val(),
+                newLoginDate,
+                newLoginCount;
 
-                // else, old date is after current date
-                else {
-                    newLoginDate = dateToday.toDateString();
-                    // no counter increment since date was messed up
-                }
-            } else {
-                // invalid date, so set as new login date
+            // if user data doesn't exist or isn't defined well, set firebase data
+            // to starting values
+            if ( !userData || typeof(userData) !== 'object' || 
+                    Object.keys(userData).length === 0 ) {
+                newLoginCount = 1;
                 newLoginDate = dateToday.toDateString();
             }
-        }
+            
+            // else, evaluate old data to determind if data should be updated or
+            // also set to startin values
+            else {
+                let oldLoginCount = parseInt( userData.login_count, 10),
+                    oldLoginDate = (new Date( userData.last_login ));
 
-        // store new data in firebase
-        firebase.database().ref('/user_holder/' + cExtVersion + '/' + username).set({
-            last_login: newLoginDate,
-            login_count : newLoginCount
+                // ==== evaluate login count ====:
+                if ( !oldLoginCount ) // NaN
+                    newLoginCount = 0;
+                else
+                    newLoginCount = oldLoginCount;
+
+                // ==== evaluate last login date ====:
+                if (oldLoginDate.toDateString() !== 'Invalid Date') {
+                    // check if old date is before current date
+                    if ( oldLoginDate.setHours(0,0,0,0) <
+                            dateToday.setHours(0,0,0,0) ) {
+                        newLoginDate = dateToday.toDateString();
+                        newLoginCount++;
+                    }
+
+                    // check if old date is same as current date
+                    else if ( oldLoginDate.setHours(0,0,0,0) ===
+                            dateToday.setHours(0,0,0,0) ) {
+                        // nothing to update so quit.
+                        return;
+                    }
+
+                    // else, old date is after current date
+                    else {
+                        newLoginDate = dateToday.toDateString();
+                        // no counter increment since date was messed up
+                    }
+                } else {
+                    // invalid date, so set as new login date
+                    newLoginDate = dateToday.toDateString();
+                }
+            }
+
+            // store new data in firebase
+            fb.database().ref(`/user_holder/${cExtVersion}/${username}`).set({
+                last_login: newLoginDate,
+                login_count : newLoginCount
+            });
+
+            // send message to background page console for tracking / fun
+            console.info(
+                'Data passed to Firebase for user login tracking:',
+                [newLoginCount, newLoginDate]
+            );
         });
-
-        // send message to background page console for tracking / fun
-        console.info(
-            'Data passed to Firebase for user login tracking:',
-            [newLoginCount, newLoginDate]
-        );
-    });
-    
+    }
 }
 
 // ===============================================================
