@@ -33,6 +33,7 @@
 				"js/offline.js-0.7.13/offline.js",
 
 				"js/jquery-3.1.1.min.js",
+				"js/Utils.js",
 				"js/ErrorThrowingAPI.js",
 				"js/SetupSubmitListeners.js",
 				"js/ViewManipulator.js",
