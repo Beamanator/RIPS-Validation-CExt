@@ -246,7 +246,7 @@ function FB_handleUserLogin(fb, mObj) {
     cExtVersion = cExtVersion.replace(/[.]/g, '-');
 
     // if username is undefined (somehow), set username to 'unknown'
-    if (!username) username = 'unknown';
+    if (!username) username = Utils_unknownUser();
 
     // GET user holder -> user object from firebase
     var userHolderPromise = fb.database()
@@ -254,7 +254,7 @@ function FB_handleUserLogin(fb, mObj) {
         .once('value');
 
     // if username is unknown, just add count
-    if (username === 'unknown') {
+    if (username === Utils_unknownUser()) {
         userHolderPromise.then( snapshot => {
             // data to store = today's date and count + 1
             let userData = snapshot.val() || {},
