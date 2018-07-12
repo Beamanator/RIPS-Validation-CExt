@@ -40,7 +40,11 @@ function loadViewManipulator(pageURL) {
  */
 function handleUserLogin(pageURL) {
 	
-	var username = getUsernameElem().text();
+	var username = getUsernameElem().text().toLowerCase();
+
+	// TODO: check / set local storage to prevent fb calls if already
+	//  logged in / checked today. Also do this for every page,
+	//  not just RecentlyAccessedClients
 
 	// if page is 'recently accessed clients', handle login in background.js
 	if ( pageURL.includes('RecentlyAccessedClients') ) {
