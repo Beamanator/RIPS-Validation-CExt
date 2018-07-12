@@ -238,7 +238,7 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * @param {object} mObj - message config object with username data
  */
 function FB_handleUserLogin(fb, mObj) {
-    let username = mObj.username,
+    let username = mObj.username.trim().toLowerCase(),
         dateToday = (new Date()),
         cExtVersion = chrome.runtime.getManifest().version;
 
@@ -246,8 +246,7 @@ function FB_handleUserLogin(fb, mObj) {
     cExtVersion = cExtVersion.replace(/[.]/g, '-');
 
     // if username is undefined (somehow), set username to 'unknown'
-    if (!username.trim())
-        username = 'unknown';
+    if (!username) username = 'unknown';
 
     // GET user holder -> user object from firebase
     var userHolderPromise = fb.database()
