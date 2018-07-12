@@ -1,0 +1,10 @@
+/* This css page applies to ALL RIPS Page! */
+
+/* Get rid of misleading underline style on section headers 
+(ex: Client Details, Case Notes...) */
+h1.type a
+{  text-decoration: none;  }
+/* Get rid of misleading color change style on section headers when
+hovering */
+h1.type a:hover
+{  color: #333;  }

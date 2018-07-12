@@ -25,7 +25,9 @@
 			"matches": [ "http://rips.247lib.com/Stars/*" ],
 			"css": [
 				"css/offline.js-0.7.13/offline-language-english.css",
-				"css/offline.js-0.7.13/offline-theme-chrome.css"
+				"css/offline.js-0.7.13/offline-theme-chrome.css",
+
+				"css/overrides/styles_ALL.css"
 			],
 			"js": [
 				"js/offline.js-0.7.13/offline.js",
