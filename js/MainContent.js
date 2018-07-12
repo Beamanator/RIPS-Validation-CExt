@@ -4,7 +4,7 @@ $(document).ready(function(){
 	loadValidation();
 	loadViewManipulator(pageURL);
 
-	handleUserLogin(pageURL);
+	handleUserLogin();
 });
 
 /**
@@ -38,31 +38,23 @@ function loadViewManipulator(pageURL) {
  * 
  * @param {string} pageURL - url of current page
  */
-function handleUserLogin(pageURL) {
-	
-	var username = getUsernameElem().text().toLowerCase();
+function handleUserLogin() {
+	var username = getUsernameElem().text().trim().toLowerCase();
+	var today = (new Date()).toDateString();
 
-	// TODO: check / set local storage to prevent fb calls if already
-	//  logged in / checked today. Also do this for every page,
-	//  not just RecentlyAccessedClients
+	// get login data for user
+	const userLoginData = Utils_getLocalRipsLoginData(username);
 
-	// if page is 'recently accessed clients', handle login in background.js
-	if ( pageURL.includes('RecentlyAccessedClients') ) {
-		// set up message config object
-		var mObj = {
-			action: 'firebase_handle_user_login',
-			username: username,
+	// if data already exists, & if date is today
+	if (userLoginData && userLoginData == today) { return; }
 
-			// no callback function needed
-			noCallback: true
-		};
-
-		// send message config to background.js
-		chrome.runtime.sendMessage(mObj);
-	}
-
+	// login data doesn't exist yet, or 1st time user logged in today - store it!
 	else {
-		// do nothing since we should have already counted this user
+		// store locally
+		Utils_setLocalRipsLoginData(username, today);
+
+		// store in fb too
+		Utils_setFbRipsLoginData(username);
 	}
 }
 
