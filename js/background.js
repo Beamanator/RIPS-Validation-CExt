@@ -238,7 +238,7 @@ function clearDataFromChromeLocalStorage(mObj, responseCallback) {
  * @param {object} mObj - message config object with username data
  */
 function FB_handleUserLogin(fb, mObj) {
-    let username = mObj.username.toLowerCase(),
+    let username = mObj.username,
         dateToday = (new Date()),
         cExtVersion = chrome.runtime.getManifest().version;
 
@@ -256,11 +256,11 @@ function FB_handleUserLogin(fb, mObj) {
 
     // if username is unknown, just add count
     if (username === 'unknown') {
-        userHolderPromise.then(snapshot => {
+        userHolderPromise.then( snapshot => {
             // data to store = today's date and count + 1
-            let userData = snapshot.val(),
+            let userData = snapshot.val() || {},
                 newLoginDate = dateToday.toDateString(),
-                newLoginCount = (+userData.login_count) + 1;
+                newLoginCount = (userData.login_count || 0) + 1;
 
             // store new data in firebase
             fb.database().ref(`/user_holder/${cExtVersion}/${username}`)
@@ -271,7 +271,7 @@ function FB_handleUserLogin(fb, mObj) {
 
             // send message to background page console for tracking / fun
             console.info(
-                'Data passed to Firebase for user login tracking:',
+                'Data passed to Firebase for <unknown> user login tracking:',
                 [newLoginCount, newLoginDate]
             );
         });
@@ -339,7 +339,7 @@ function FB_handleUserLogin(fb, mObj) {
 
             // send message to background page console for tracking / fun
             console.info(
-                'Data passed to Firebase for user login tracking:',
+                'Data passed to Firebase for <known> user login tracking:',
                 [newLoginCount, newLoginDate]
             );
         });
