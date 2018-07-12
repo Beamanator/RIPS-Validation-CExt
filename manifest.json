@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "1.1.0",
+	"version": "1.1.1",
 
 	"description": "RIPS Extension - Adds validation on UNHCR #, Phone #, and DOB",
 
@@ -22,11 +22,10 @@
 
     "content_scripts": [
 		{
-			"matches": [ "http://rips.247lib.com/*" ],
+			"matches": [ "http://rips.247lib.com/Stars/*" ],
 			"css": [
 				"css/offline.js-0.7.13/offline-language-english.css",
-				"css/offline.js-0.7.13/offline-theme-chrome.css",
-				"css/restore.css"
+				"css/offline.js-0.7.13/offline-theme-chrome.css"
 			],
 			"js": [
 				"js/offline.js-0.7.13/offline.js",

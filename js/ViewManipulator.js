@@ -54,7 +54,6 @@ function Manipulate(url, username) {
     }
 
     // Add Action Page
-    // Old plan: add 'mEnableDataRecovery'
     else if ( urlHas(url, 'MatterAction/CreateNewAction') ) {
         mAutoSelectCW( username );
     }
@@ -350,30 +349,6 @@ function urlHas(url, text) {
 		return false;
 	else
 		return true;
-}
-
-/**
- * Function builds and returns html for recovery status bar
- * 
- * @returns html in form of string
- */
-function getRecoverHTML() {
-    var html = '<div id="restore-ui">'
-            + '<span id="restore-ui-content">'
-                + 'Found lost data'
-            + '</span>'
-            + '<button id="restore-ui-action">'
-                + 'Recover'
-            + '</button>'
-            + '<span id="restore-ui-separator">'
-                + '-'
-            + '</span>'
-            + '<button id="restore-ui-clear">'
-                + 'Clear'
-            + '</button>'
-        + '</div>';
-
-    return html;
 }
 
 /**
