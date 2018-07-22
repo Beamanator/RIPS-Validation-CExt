@@ -171,7 +171,9 @@ function mCheckDepVulnPopulated() {
  */
 function mAutoSelectCW( username ) {
     // get html caseworker elements
-    let caseworkerArr = $('select#CASEWORKERID option'),
+    // -> id changed from 'CASEWORKERID' to 'cwValue' 22-Jul-2018
+    // -> so switched to using 'name' attribute
+    let caseworkerArr = $('select[name="CASEWORKERID"] option'),
         id = undefined;
 
     if (caseworkerArr.length === 0)
