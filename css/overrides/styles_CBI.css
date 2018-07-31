@@ -17,5 +17,7 @@ form > fieldset > input.newField
 input[value="7"] + label { font-weight: bold; font-size: 16px; }
 /* Vuln "Severe Protection Concerns" -> value = 8  */
 input[value="8"] + label { font-weight: bold; font-size: 16px; }
-/* Vuln "Survivor of Torture" -> value = 11  */
+/* Vuln "Survivor of Torture (Yes)" -> value = 11  */
 input[value="11"] + label { font-weight: bold; font-size: 16px; }
+/* Vuln "Client has Child [RLAP ONLY]" -> value = 41 */
+input[value="41"] + label { font-weight: bold; font-size: 16px; }
