@@ -78,9 +78,12 @@ function mCheckDepVulnPopulated() {
         .find('input[id^=CDDependentStatsLabel]');
 
     // get vuln checkboxes starting with PostedVulDicts_VulID
-    let $vulnCheckboxes = $('form#postClntVulSubmit')
-        .find('input[id^=PostedVulDicts_VulID]'),
-        $vulnNotes = $('div#DivVulnerablity textarea#DescNotes');
+    let $vulnCheckboxes = $('div#DivVulnerablity')
+    .find('input[id^=PostedVulDicts_VulID]');
+    // old selector: (changed 10 Aug 2018)
+    // let $vulnCheckboxes = $('form#postClntVulSubmit')
+    
+    let $vulnNotes = $('div#DivVulnerablity textarea#DescNotes');
 
     if ($dependentInputs.length === 0 ||
         $vulnCheckboxes.length === 0 ||
