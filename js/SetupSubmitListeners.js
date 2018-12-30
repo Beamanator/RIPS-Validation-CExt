@@ -201,21 +201,6 @@ function doValidationCheck(validateFlag) {
 				err_config['message'] = 'Check "other" phone number format';
 		}
 
-		// TODO: maybe make error message more specific?
-		if ( fieldsValidFlag && valDates !== false) {
-			let $elems = getDateElems();
-
-			for (let i = 0; i < $elems.length; i++) {
-				if (fieldsValidFlag)
-					fieldsValidFlag = validateDate($elems[i], false);
-				else
-					break;
-			}
-
-			if (!fieldsValidFlag)
-				err_config['message'] = 'Check date format(s)';
-		}
-
 		// if fields valid, pass validation. and vice verca
 		err_config['pass'] = fieldsValidFlag;
 		err_config['title'] = 'Error: Invalid field format';

@@ -66,7 +66,7 @@ chrome.runtime.onMessage.addListener(function(mObj, MessageSender, sendResponse)
             async = true;
             break;
 
-        // TODO: add counter for invalid UNHCR / phone numbers / dates caught
+        // TODO: add counter for invalid UNHCR / phone numbers caught
         
         // handle user login - firebase data tracking
         case 'firebase_handle_user_login':
@@ -156,7 +156,6 @@ function storeToChromeLocalStorage(mObj, responseCallback) {
 		/* ============== AVAILABLE KEYS =============
 				VALID_UNHCR   -	holds the on/off (true / false) value for each field
 				VALID_PHONE
-				VALID_DATES   - N/A
 				VALID_APPT    - N/A
 
                 CACHED_DATA   - Stores saved data in case RIPS timed out

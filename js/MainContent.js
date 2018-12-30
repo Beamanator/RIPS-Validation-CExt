@@ -18,7 +18,6 @@ function loadValidation() {
 	setValidateUNHCR( true );
 	setValidatePhoneNo( true );
 	setValidateOtherPhoneNo( true );
-	setValidateDates( true );
 }
 
 /**
@@ -64,7 +63,6 @@ function handleUserLogin() {
 function getUnhcrElemID() { return 'UNHCRIdentifier'; }
 function getPhoneElemID() { return 'CDAdrMobileLabel'; }
 function getOtherPhoneElemId() { return 'CDAdrTelLabel'; }
-function getDateElemIDs() { return ['LDATEOFBIRTH']; }
 
 /**
  * Function returns jQuery html element
@@ -77,24 +75,7 @@ function getUsernameElem() { return $('a.username[title="Manage"]'); }
 function getUnhcrElem() { return $('#'+getUnhcrElemID() ); }
 function getPhoneElem() { return $('#'+getPhoneElemID() ); }
 function getOtherPhoneElem() { return $('#'+getOtherPhoneElemId() ); }
-function getDateElems() {
-	let dateElemIDs = getDateElemIDs(),
-		$dateElems = [];
-	for (let i = 0; i < dateElemIDs.length; i++) {
-		let $dateElem = $('#'+dateElemIDs[i]);
 
-		// throw error if couldn't find element
-		if ($dateElem.length === 0) {
-			console.warn('couldnt find date element with id: <' + dateElemIDs[i]
-				+ '>');
-		}
-		
-		// else, put element in array to return
-		else
-			$dateElems.push( $dateElem );
-	}
-	return $dateElems;
-}
 
 // ========================================================================
 //                       CHANGE -> VALIDATION FUNCTIONS
@@ -156,39 +137,6 @@ function setValidateUNHCR(on) {
 	}
 }
 
-// TODO: combine down setValidate<blah> functions
-/**
- * Function adds / removes Date number validation to the following pages:
- * Registration
- * Client Basic Information
- * 
- * @param {any} on 
- */
-function setValidateDates(on) {
-	// Add jQuery 'blur' function to UNHCR text box.
-    // When UNHCR number is changed and focus leaves, call validation function
-
-	let dateElems = getDateElems();
-
-	if (on) {
-		// set blur function on all date elements
-		for (let i = 0; i < dateElems.length; i++) {
-			dateElems[i].blur(function (e) {
-				// set pause so date can be stored in input element
-				// by jQuery, then validated using $this.val()
-				setTimeout(function($this) {
-					validateDate( $this, true );
-				}, 500, $(this))
-		    });
-		}
-	} else {
-		// remove blur function on all date elements
-		for (let i = 0; i < dateElems.length; i++) {
-			dateElems[i].unbind("blur");
-		}
-	}
-}
-
 function setValidateAppointmentNo(on) {
 	console.log('woot! not implemented yet...');
 }
@@ -208,9 +156,6 @@ chrome.runtime.onMessage.addListener( function(request, MessageSender, sendRespo
 			// 	break;
 	        // case "validate_phone":
 	        // 	setValidatePhoneNo(request.on);
-        	// 	break;
-        	// case "validate_dates":
-        	// 	changeValidateDates(request.on);
         	// 	break;
         	// case "validate_appt_no":
         	// 	changeValidateAppointmentNo(request.on);
@@ -556,80 +501,6 @@ function validatePhoneNo($elem, throwErrorFlag, type='main') {
 
         return false;
 	}
-}
-
-/*
-Validates if a given date is in correct format
-	Validation format: DD/MM/YYYY
-		00 <= DD <= 31
-		00 <= MM <= 12
-		1900 <= YYYY <= 2100
-*/
-function validateDate($elem, throwErrorFlag) {
-	// can use '\\n' to enter text on a new line if needed
-    function throwDateError(message) {
-    	var title = 'Invalid Date Entered';
-
-		if (!message)
-			message = 'Please fix date format and try again. Format should be:' +
-				' DD/MM/YYYY';
-
-    	// if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
-		// or no message, or throwErrorFlag is false -> throw console
-		// error and quit
-    	if (!ThrowError || !throwErrorFlag) {
-			console.error('Date Format Error: ', message);
-			return;
-		}
-
-    	ThrowError({
-    		title: title,
-    		message: message,
-        	errMethods: ['mConsole', 'mSwal']
-    	});
-    }
-
-	var date = $elem.val();
-	
-	// date SHOULD be in format DD/MM/YYYY
-	let dateArr = date.split('/');
-
-	if (dateArr.length !== 3) {
-		throwDateError('Date entered needs 3 groups of numbers (day, month, year)' +
-			' - separated by "/"');
-		return false;
-	}
-
-	let d = parseInt( dateArr[0] );
-	let m = parseInt( dateArr[1] );
-	let y = parseInt( dateArr[2] );
-
-	// error if parsing went poorly
-	if (d === NaN || m === NaN || y === NaN) {
-		throwDateError('Date entered seems to include invalid characters');
-		return false;
-	}
-	
-	// error if day is out of range
-	else if (d < 1 || d > 31) {
-		throwDateError(`Day entered (${d}) is out of range (1 - 31)`);
-		return false;
-	}
-
-	// error if months is out of range
-	else if (m < 0 || m > 12) {
-		throwDateError('Month entered (' + m + ') is out of range (1 - 12)');
-		return false;
-	}
-
-	// error if year is out of range
-	else if (y < 1900 || y > 2100) {
-		throwDateError('Year entered (' + y + ') is out of range (1900 - 2100)');
-		return false;
-	}
-
-	// all numbers are valid, so return true.
-	return true;
 }
 
 // ========================================================================
