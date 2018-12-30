@@ -69,21 +69,14 @@ function handleSubmit(config) {
 		if (validateFlag)
 			p_container.push( doValidationCheck(validateFlag) );
 
-		p_container.push( doOfflineCheck() );
-
 		// run validation & online check promises
 		Promise.all(p_container)
 		.then(function(responses) {
 			// get config objects from responses
 			var check_valid_err_config;
-			var check_offline_err_config;
 
-			// if true,
 			if (validateFlag) {
 				check_valid_err_config = responses[0];
-				check_offline_err_config = responses[1];
-			} else {
-				check_offline_err_config = responses[0];
 			}
 
 			var allPass = true,
@@ -97,8 +90,7 @@ function handleSubmit(config) {
 			// loop through err configs to determine if each passed and
 			// 	when to throw ONE error (only one)
 			for (let e_config of [
-				check_valid_err_config,
-				check_offline_err_config
+				check_valid_err_config
 			]) {
 				// if e_config isn't in proper format, skip it
 				if (!e_config) continue;
@@ -159,42 +151,6 @@ function handleSubmit(config) {
 			else {}
 		});
 	});
-}
-
-/**
- * Runs a check for online / offline status. If offline, throws an error 
- * 
- * @returns {boolean} offline state (true === offline, false === online)
- */
-function doOfflineCheck() {
-	// if Offline isn't found, quit & allow default to happen
-	if (!Offline) {
-		console.warn('Offline.js not found -> Continue like normal');
-		return false;
-	}
-
-	// force Offline.js to recheck online status:
-	Offline.check();
-
-	// check offline status!
-	var offlineStatus = Offline.state;
-
-	// if offline, return true (prevent default eventually). if online, let it go through (return false)!
-	if (offlineStatus !== 'up') {
-		var statusMessage = 'Preventing form submit!'
-			+ '\\nInternet connection is ' + offlineStatus
-			+ '\\nPlease retry when internet is up again.';
-
-		// true = is offline. so pass = false
-		return {
-			pass: false,
-			title: 'Connection Problem',
-			message: statusMessage
-		};
-	} else {
-		// online, return false (not offline = false offline)
-		return { pass: true };
-	}
 }
 
 /**
