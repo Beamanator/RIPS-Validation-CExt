@@ -1,8 +1,8 @@
 {
 	"manifest_version": 2,
 	"name": "RIPS Extension - Validation",
-	"version": "1.2.1", // (still don't know why unknown users are stored)
-
+	"version": "1.2.2",
+	
 	"description": "RIPS Extension - Adds validation on UNHCR #, Phone #, and DOB",
 
 	"permissions": [
