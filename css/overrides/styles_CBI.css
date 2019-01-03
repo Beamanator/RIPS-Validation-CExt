@@ -25,6 +25,6 @@ input[value="41"] + label { font-weight: bold; font-size: 16px; }
 /* Hide some vulnerabilities (temporary) */
 /* Vuln "Unaccompanied/separated child" -> value = 9 */
 /* Note: also have to hide the '<br>' after to solve spacing issue */
-input[value="9"], input[value="9"] + label,
+input[value="9"][type="checkbox"], input[value="9"] + label,
 input[value="9"] + label + br
     { display: none; }
