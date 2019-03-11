@@ -5,6 +5,57 @@ $(document).ready(function() {
     loadViewManipulator(pageURL);
 
     handleUserLogin();
+
+    /**
+     * Example report ids on Client Reports tab (selectedRptGroup=102):
+     * 20301, 20234, 20242
+     */
+    if (pageURL.indexOf("Report/ReportPreview") >= 0) {
+        let targetReportElem = null; // not found, by default
+        let reportFound = false; // not found, by default
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetReportNum = +urlParams.get("ReportId");
+
+        if (!targetReportNum || isNaN(targetReportNum)) {
+            console.log(
+                "No report targeted to open automatically. Found id: ",
+                targetReportNum
+            );
+            return;
+        }
+
+        document.querySelectorAll('a[id="reportName"]').forEach((elem) => {
+            if (reportFound) return; // quickly skip if report already found
+
+            let clickEventStr = elem.getAttribute("onclick");
+            let reportNum = +clickEventStr.match(/[0-9]+/g);
+
+            if (isNaN(reportNum)) {
+                console.warn(
+                    `reportNum ${reportNum} could not be converted to number`
+                );
+                return;
+            }
+
+            if (reportNum === targetReportNum) {
+                reportFound = true;
+                targetReportElem = elem;
+            }
+        });
+
+        if (!reportFound) {
+            console.log("Didn't found report with id:", targetReportNum);
+            return;
+        }
+
+        // change report style
+        targetReportElem.style.setProperty("font-weight", "bold");
+        targetReportElem.style.setProperty("color", "red", "important");
+
+        // trigger clicking on the report preview
+        targetReportElem.click();
+    }
 });
 
 /**
