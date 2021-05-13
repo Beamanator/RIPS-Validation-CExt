@@ -1,5 +1,11 @@
 ---
+name: Bug
+about: Found a bug?
 labels: bug
 ---
 
-This is my template
+# Expected:
+
+# Actual:
+
+# Steps taken:
