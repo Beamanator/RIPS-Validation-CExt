@@ -1,7 +1,7 @@
 ---
 name: Bug
 about: Found a bug?
-labels: bug
+labels: bug, AutoAssignerTriage
 ---
 
 # Expected:
