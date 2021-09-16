@@ -270,12 +270,13 @@ function validateUNHCR($elem, throwErrorFlag) {
             msg = message;
         } else {
             msg =
-                "UNHCR numbers must match one of these formats:" +
-                "\\n###-YYC##### (new)" +
-                "\\n####/YYYY (old)" +
-                "\\n###-AP######## (new appointment slip)" +
-                "\\n###-CS######## (old appointment slip)" +
-                '\\nFor no UNHCR number, enter \\"None\\"';
+                `UNHCR numbers must match one of these formats:
+                \\n###-YY-##### (new)
+                \\n###-YYC##### (old)
+                \\n####/YYYY (very old)
+                \\n###-AP######## (new appointment slip)
+                \\n###-CS######## (old appointment slip)
+                \\nFor no UNHCR number, enter "None"`;
         }
 
         // if ThrowError (from ErrorThrowingAIP.js) doesn't exist,
@@ -305,8 +306,31 @@ function validateUNHCR($elem, throwErrorFlag) {
         return num.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]/g, "");
     }
 
-    // function checks if format is valid for the new UNHCR ID style
     function checkValidNew(num) {
+        var format = "^[0-9]{3}-[0-9]{2}-[0-9]{5}$";
+
+        // remove non-alphanumeric values from num
+        num = removeNonAlphanumeric(num);
+
+        // convert letters to uppercase and replace capital O with zeros (0)
+        num = num.replace(/O/g, "0");
+
+        // add '-' in 3rd position and !
+        num = num.substr(0, 3) + "-" + num.substr(3);
+
+        // add '-' in 6th position!
+        num = num.substr(0, 6) + "-" + num.substr(6);
+
+        // if entered data doesn't match format, return false.
+        if (num.match(format) == null) {
+            return false;
+        } else {
+            placeInputValue($elem, num);
+            return true;
+        }
+    }
+    // function checks if format is valid for the new UNHCR ID style
+    function checkValidOld(num) {
         var format = "^[0-9]{3}-[0-9]{2}C[0-9]{5}$";
 
         // remove non-alphanumeric values from num
@@ -328,7 +352,7 @@ function validateUNHCR($elem, throwErrorFlag) {
     }
 
     // function checks if format is valid for the old UNHCR ID style
-    function checkValidOld(num) {
+    function checkValidVeryOld(num) {
         var format = "^[0-9]{4}/[0-9]{4}$";
 
         // remove non-alphanumeric values from num
@@ -405,6 +429,7 @@ function validateUNHCR($elem, throwErrorFlag) {
         checkValidApptSlip(UNHCRID) ||
         checkValidNew(UNHCRID) ||
         checkValidOld(UNHCRID) ||
+        checkValidVeryOld(UNHCRID) ||
         checkValidNone(UNHCRID)
     ) {
         // one format is correct, so we're happy!
