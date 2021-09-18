@@ -307,32 +307,6 @@ function validateUNHCR($elem, throwErrorFlag) {
     }
 
     // function checks if format is valid for the new UNHCR ID style
-    function checkValidNew(num) {
-        var format = "^[0-9]{3}-[0-9]{2}(?:C|-)[0-9]{5}$";
-
-        // remove non-alphanumeric values from num
-        num = removeNonAlphanumeric(num);
-
-        // convert letters to uppercase and replace capital O with zeros (0)
-        num = num.replace(/O/g, "0");
-
-        // add '-' in 3rd position!
-        num = num.substr(0, 3) + "-" + num.substr(3);
-
-        // check if the num does not have C in the sixth position!
-        if (num.substr(6, 1) !== "C") {
-            // if no, add '-' in 6th position!
-            num = num.substr(0, 6) + "-" + num.substr(6);
-        }
-
-        // if entered data doesn't match format, return false.
-        if (num.match(format) == null) {
-            return false;
-        } else {
-            placeInputValue($elem, num);
-            return true;
-        }
-    }
 
     // function checks if format is valid for the old UNHCR ID style
     function checkValidOld(num) {
@@ -358,40 +332,50 @@ function validateUNHCR($elem, throwErrorFlag) {
 
     // function checks if format is valid for case number (before getting card)
     // 8 Aug 2017: new appointment slip #s have 'AP', not 'CS' in them.
-    function checkValidApptSlip(num) {
-        var format1 = "^[0-9]{3}-CS[0-9]{8}$";
-        var format2 = "^[0-9]{3}-AP[0-9]{8}$";
-
-        // remove non-alphanumeric values from num
-        num = removeNonAlphanumeric(num);
-
-        // convert letters to uppercase and replace capital O with zeros (0)
-        num = num.replace(/O/g, "0");
-
-        // add '/' in 4th position!
-        num = num.substr(0, 3) + "-" + num.substr(3);
-
-        // if entered data doesn't match format, return false.
-        if (num.match(format1) == null && num.match(format2) == null) {
-            return false;
-        } else {
-            placeInputValue($elem, num);
-            return true;
-        }
-    }
 
     // function checks if value is equal to "None"!!
     // @param: num = UNHCR ID in capital letters
-    function checkValidNone(num) {
+
+    function checkValidUnhcrNum(num) {
+        var newFormat = "^[0-9]{3}-[0-9]{2}(?:C|-)[0-9]{5}$";
+        //var oldFormat = "^[0-9]{4}/[0-9]{4}$";
+        var ApptSlipFormat = "^[0-9]{3}-(?:CS|AP)[0-9]{8}$";
+
         // remove non-alphanumeric values from num
         num = removeNonAlphanumeric(num);
 
-        // check if it is "NONE"
+        // add '-' in 3rd position!
+        if (num.substr(0, 1) !== "N") {
+            num = num.substr(0, 3) + "-" + num.substr(3);
+        }
+
+        if (
+            num.substr(0, 1) !== "N" &&
+            num.substr(6, 1) !== "C" &&
+            num.substr(4, 2) !== "CS" &&
+            num.substr(4, 2) !== "AP"
+        ) {
+            // if no, add '-' in 6th position!
+            num = num.substr(0, 6) + "-" + num.substr(6);
+        }
+
+        // if entered data doesn't match format, return false.
+
         if (num === "NONE") {
+            console.log("this is NONE", num);
             placeInputValue($elem, "None");
             return true;
-        } else {
+        } else if (
+            num !== "NONE" &&
+            num.match(newFormat) == null &&
+            num.match(ApptSlipFormat) == null
+        ) {
+            console.log("invalid unhcr number", num);
             return false;
+        } else {
+            console.log("valid unhcr number", num);
+            placeInputValue($elem, num);
+            return true;
         }
     }
 
@@ -408,12 +392,7 @@ function validateUNHCR($elem, throwErrorFlag) {
     placeInputValue($elem, UNHCRID);
 
     // Logic for deciding which format to validate on
-    if (
-        checkValidApptSlip(UNHCRID) ||
-        checkValidNew(UNHCRID) ||
-        checkValidOld(UNHCRID) ||
-        checkValidNone(UNHCRID)
-    ) {
+    if (checkValidOld(UNHCRID) || checkValidUnhcrNum(UNHCRID)) {
         // one format is correct, so we're happy!
         // console.log('UNHCR ID is valid');
         return true;
